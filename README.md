@@ -28,7 +28,7 @@ npm run dev
 A Vite-powered static site with:
 
 - **Tailwind CSS v4** for styling
-- **Custom HTML components** — author pages with `<callout>`, `<heading>`, `<card>`, whatever you define
+- **Custom HTML components**  - author pages with `<callout>`, `<heading>`, `<card>`, whatever you define
 - **Layout system** with `[[app]]` slot and `<page-head>` injection
 - **File-based page routing** (`content/pages/about.html` → `/about`)
 - Hot reload in dev, page compilation for production
