@@ -1,0 +1,258 @@
+/* Graspr Framework — base styles
+   Import this from your app's CSS after @import 'tailwindcss' and @source directives. */
+
+/* ── Theme variables ──
+   Override these in your app's CSS to customize the framework's UI components.
+
+   Example:
+     :root {
+       --graspr-text: #1C1C1C;
+       --graspr-primary: #A3B8A5;
+       --graspr-primary-hover: #8AA38D;
+       --graspr-surface: #FEFBF8;
+     }
+*/
+:root {
+    /* Text */
+    --graspr-text:              rgb(15 23 42);      /* slate-900 */
+    --graspr-text-secondary:    rgb(71 85 105);      /* slate-600 */
+    --graspr-text-muted:        rgb(100 116 139);    /* slate-500 */
+
+    /* Primary action (confirm buttons, active states) */
+    --graspr-primary:           rgb(15 23 42);       /* slate-900 */
+    --graspr-primary-hover:     rgb(30 41 59);       /* slate-800 */
+    --graspr-primary-text:      white;
+
+    /* Secondary/cancel */
+    --graspr-border:            rgb(203 213 225);    /* slate-300 */
+    --graspr-border-light:      rgb(226 232 240);    /* slate-200 */
+    --graspr-surface:           rgb(248 250 252);    /* slate-50 */
+    --graspr-surface-hover:     rgb(241 245 249);    /* slate-100 */
+
+    /* Toast: success */
+    --graspr-toast-success-bg:  rgb(22 163 74);      /* green-600 */
+    --graspr-toast-success-text: white;
+    --graspr-toast-success-border: rgb(21 128 61);   /* green-700 */
+
+    /* Toast: warning */
+    --graspr-toast-warning-bg:  rgb(254 243 199);    /* amber-100 */
+    --graspr-toast-warning-text: rgb(120 53 15);     /* amber-900 */
+    --graspr-toast-warning-border: rgb(253 230 138); /* amber-200 */
+
+    /* Toast: error */
+    --graspr-toast-error-bg:    rgb(220 38 38);      /* red-600 */
+    --graspr-toast-error-text:  white;
+    --graspr-toast-error-border: rgb(185 28 28);     /* red-700 */
+
+    /* Modal */
+    --graspr-modal-bg:          white;
+    --graspr-modal-border:      var(--graspr-border-light);
+    --graspr-modal-backdrop:    rgba(0, 0, 0, 0.25);
+
+    /* Progress bar */
+    --graspr-progress-bg:       var(--graspr-border-light);
+    --graspr-progress-fill:     var(--graspr-text-secondary);
+}
+
+/* Override inline FOUC prevention — body becomes visible once this stylesheet loads */
+body { opacity: 1; }
+
+/* ── Buttons ── */
+.graspr-btn-primary {
+    background: var(--graspr-primary);
+    color: var(--graspr-primary-text);
+}
+.graspr-btn-primary:hover {
+    background: var(--graspr-primary-hover);
+}
+.graspr-btn-cancel {
+    border-color: var(--graspr-border);
+    color: var(--graspr-text);
+}
+.graspr-btn-cancel:hover {
+    background: var(--graspr-surface);
+}
+
+/* Form error styles */
+.field-error {
+    @apply border-red-600;
+}
+
+.field-error:focus {
+    @apply ring-red-600;
+}
+
+.field-error-text {
+    @apply text-sm text-red-600 mt-1;
+}
+
+.form-error-banner {
+    @apply rounded border border-red-200 bg-red-50 text-red-800 px-4 py-3 text-sm;
+}
+
+/* Disabled buttons — visual feedback when HTMX or JS disables a button */
+button:disabled,
+button[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* HTMX request indicator - dims content during fetch */
+.htmx-request,
+.search-loading {
+    opacity: 0.3;
+    transition: opacity 75ms ease-out;
+}
+
+.htmx-settling {
+    transition: opacity 150ms ease-in;
+}
+
+/* Modal animation */
+#global-modal {
+    transition: visibility 0s linear 150ms, opacity 150ms ease-out;
+    opacity: 0;
+    visibility: hidden;
+}
+
+#global-modal.modal-open {
+    transition: visibility 0s linear 0s, opacity 150ms ease-out;
+    opacity: 1;
+    visibility: visible;
+}
+
+#global-modal [role="dialog"] {
+    transition: transform 150ms ease-out;
+    transform: translateY(2rem);
+    outline: none;
+    background: var(--graspr-modal-bg);
+    border-color: var(--graspr-modal-border);
+}
+
+#global-modal.modal-open [role="dialog"] {
+    transform: translateY(0);
+}
+
+/* Modal backdrop */
+#global-modal > .absolute.inset-0 {
+    background: var(--graspr-modal-backdrop);
+}
+
+/* Darker backdrop when examples layout is active */
+body:has(#app[data-layout="examples"]) #global-modal .absolute.inset-0 {
+    background: rgba(255, 255, 255, 0.50);
+}
+
+/* Modal size variants */
+#global-modal [role="dialog"].modal-sm {
+    max-width: 24rem;
+}
+
+#global-modal [role="dialog"].modal-lg {
+    max-width: 56rem;
+}
+
+/* Takeover modal - fullscreen with blurred backdrop */
+#global-modal.modal-takeover .absolute.inset-0 {
+    backdrop-filter: blur(8px);
+    background: rgba(0, 0, 0, 0.3);
+}
+
+#global-modal.modal-takeover > .relative.z-10 {
+    padding: 0;
+    align-items: stretch;
+}
+
+#global-modal.modal-takeover [role="dialog"] {
+    max-width: none;
+    max-height: none;
+    width: 100%;
+    height: 100dvh;
+    border-radius: 0;
+    border: none;
+    background: transparent;
+}
+
+/* Hide default header in takeover mode - template provides its own UI */
+#global-modal.modal-takeover #global-modal-header {
+    display: none;
+}
+
+/* Show takeover close button only in takeover mode */
+#global-modal.modal-takeover .takeover-close-btn {
+    display: block;
+}
+
+/* Takeover content should fill available space */
+#global-modal.modal-takeover #global-modal-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+}
+
+/* Takeover modal animation - fade/scale instead of slide */
+#global-modal.modal-takeover [role="dialog"] {
+    transform: scale(0.98);
+    opacity: 0;
+    transition: transform 200ms ease-out, opacity 200ms ease-out;
+}
+
+#global-modal.modal-takeover.modal-open [role="dialog"] {
+    transform: scale(1);
+    opacity: 1;
+}
+
+/* Sortable drag-and-drop */
+.sortable-ghost { opacity: 0.4; background-color: var(--graspr-surface); }
+.sortable-chosen { background-color: var(--graspr-surface); }
+.sortable-disabled .drag-handle { visibility: hidden; pointer-events: none; }
+
+/* Active nav link — faux-bold via text-shadow to avoid layout shift */
+.active-nav {
+    text-shadow: 0 0 0.01px currentColor, 0 0 0.01px currentColor;
+}
+
+/* ── Confirm dialog ── */
+.confirm-message   { color: var(--graspr-text); }
+.confirm-subtext   { color: var(--graspr-text-secondary); }
+.confirm-checkbox  { color: var(--graspr-text); }
+.confirm-cancel-btn {
+    border-color: var(--graspr-border);
+    color: var(--graspr-text);
+}
+.confirm-cancel-btn:hover { background: var(--graspr-surface); }
+.confirm-ok-btn {
+    background: var(--graspr-primary);
+    color: var(--graspr-primary-text);
+}
+.confirm-ok-btn:hover { background: var(--graspr-primary-hover); }
+
+/* ── Toast variants ── */
+.graspr-toast-success {
+    background: var(--graspr-toast-success-bg);
+    color: var(--graspr-toast-success-text);
+    border-color: var(--graspr-toast-success-border);
+}
+.graspr-toast-warning {
+    background: var(--graspr-toast-warning-bg);
+    color: var(--graspr-toast-warning-text);
+    border-color: var(--graspr-toast-warning-border);
+}
+.graspr-toast-error {
+    background: var(--graspr-toast-error-bg);
+    color: var(--graspr-toast-error-text);
+    border-color: var(--graspr-toast-error-border);
+}
+
+/* Table column sort headers */
+th[data-sort] { cursor: pointer; user-select: none; }
+th[data-sort]:hover { background-color: rgba(0, 0, 0, 0.04); }
+th[data-sort]::after { content: '\21C5'; opacity: 0.3; margin-left: 0.25rem; font-size: 0.75em; }
+th[data-sort].sort-asc::after { content: '\2191'; opacity: 1; }
+th[data-sort].sort-desc::after { content: '\2193'; opacity: 1; }
+
+/* Confirm dialog progress bar */
+.confirm-progress-bar {
+    transition: width 1s ease-out;
+}
