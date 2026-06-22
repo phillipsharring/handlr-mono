@@ -1,0 +1,5 @@
+{
+  "name": "@phillipsharring/handlr-monorepo",
+  "private": true,
+  "workspaces": ["packages/*"]
+}
