@@ -1,4 +1,4 @@
-/* Graspr Framework — base styles
+/* Handlr Framework — base styles
    Import this from your app's CSS after @import 'tailwindcss' and @source directives. */
 
 /* ── Theme variables ──
@@ -6,71 +6,71 @@
 
    Example:
      :root {
-       --graspr-text: #1C1C1C;
-       --graspr-primary: #A3B8A5;
-       --graspr-primary-hover: #8AA38D;
-       --graspr-surface: #FEFBF8;
+       --handlr-text: #1C1C1C;
+       --handlr-primary: #A3B8A5;
+       --handlr-primary-hover: #8AA38D;
+       --handlr-surface: #FEFBF8;
      }
 */
 :root {
     /* Text */
-    --graspr-text:              rgb(15 23 42);      /* slate-900 */
-    --graspr-text-secondary:    rgb(71 85 105);      /* slate-600 */
-    --graspr-text-muted:        rgb(100 116 139);    /* slate-500 */
+    --handlr-text:              rgb(15 23 42);      /* slate-900 */
+    --handlr-text-secondary:    rgb(71 85 105);      /* slate-600 */
+    --handlr-text-muted:        rgb(100 116 139);    /* slate-500 */
 
     /* Primary action (confirm buttons, active states) */
-    --graspr-primary:           rgb(15 23 42);       /* slate-900 */
-    --graspr-primary-hover:     rgb(30 41 59);       /* slate-800 */
-    --graspr-primary-text:      white;
+    --handlr-primary:           rgb(15 23 42);       /* slate-900 */
+    --handlr-primary-hover:     rgb(30 41 59);       /* slate-800 */
+    --handlr-primary-text:      white;
 
     /* Secondary/cancel */
-    --graspr-border:            rgb(203 213 225);    /* slate-300 */
-    --graspr-border-light:      rgb(226 232 240);    /* slate-200 */
-    --graspr-surface:           rgb(248 250 252);    /* slate-50 */
-    --graspr-surface-hover:     rgb(241 245 249);    /* slate-100 */
+    --handlr-border:            rgb(203 213 225);    /* slate-300 */
+    --handlr-border-light:      rgb(226 232 240);    /* slate-200 */
+    --handlr-surface:           rgb(248 250 252);    /* slate-50 */
+    --handlr-surface-hover:     rgb(241 245 249);    /* slate-100 */
 
     /* Toast: success */
-    --graspr-toast-success-bg:  rgb(22 163 74);      /* green-600 */
-    --graspr-toast-success-text: white;
-    --graspr-toast-success-border: rgb(21 128 61);   /* green-700 */
+    --handlr-toast-success-bg:  rgb(22 163 74);      /* green-600 */
+    --handlr-toast-success-text: white;
+    --handlr-toast-success-border: rgb(21 128 61);   /* green-700 */
 
     /* Toast: warning */
-    --graspr-toast-warning-bg:  rgb(254 243 199);    /* amber-100 */
-    --graspr-toast-warning-text: rgb(120 53 15);     /* amber-900 */
-    --graspr-toast-warning-border: rgb(253 230 138); /* amber-200 */
+    --handlr-toast-warning-bg:  rgb(254 243 199);    /* amber-100 */
+    --handlr-toast-warning-text: rgb(120 53 15);     /* amber-900 */
+    --handlr-toast-warning-border: rgb(253 230 138); /* amber-200 */
 
     /* Toast: error */
-    --graspr-toast-error-bg:    rgb(220 38 38);      /* red-600 */
-    --graspr-toast-error-text:  white;
-    --graspr-toast-error-border: rgb(185 28 28);     /* red-700 */
+    --handlr-toast-error-bg:    rgb(220 38 38);      /* red-600 */
+    --handlr-toast-error-text:  white;
+    --handlr-toast-error-border: rgb(185 28 28);     /* red-700 */
 
     /* Modal */
-    --graspr-modal-bg:          white;
-    --graspr-modal-border:      var(--graspr-border-light);
-    --graspr-modal-backdrop:    rgba(0, 0, 0, 0.25);
+    --handlr-modal-bg:          white;
+    --handlr-modal-border:      var(--handlr-border-light);
+    --handlr-modal-backdrop:    rgba(0, 0, 0, 0.25);
 
     /* Progress bar */
-    --graspr-progress-bg:       var(--graspr-border-light);
-    --graspr-progress-fill:     var(--graspr-text-secondary);
+    --handlr-progress-bg:       var(--handlr-border-light);
+    --handlr-progress-fill:     var(--handlr-text-secondary);
 }
 
 /* Override inline FOUC prevention — body becomes visible once this stylesheet loads */
 body { opacity: 1; }
 
 /* ── Buttons ── */
-.graspr-btn-primary {
-    background: var(--graspr-primary);
-    color: var(--graspr-primary-text);
+.handlr-btn-primary {
+    background: var(--handlr-primary);
+    color: var(--handlr-primary-text);
 }
-.graspr-btn-primary:hover {
-    background: var(--graspr-primary-hover);
+.handlr-btn-primary:hover {
+    background: var(--handlr-primary-hover);
 }
-.graspr-btn-cancel {
-    border-color: var(--graspr-border);
-    color: var(--graspr-text);
+.handlr-btn-cancel {
+    border-color: var(--handlr-border);
+    color: var(--handlr-text);
 }
-.graspr-btn-cancel:hover {
-    background: var(--graspr-surface);
+.handlr-btn-cancel:hover {
+    background: var(--handlr-surface);
 }
 
 /* Form error styles */
@@ -125,8 +125,8 @@ button[disabled] {
     transition: transform 150ms ease-out;
     transform: translateY(2rem);
     outline: none;
-    background: var(--graspr-modal-bg);
-    border-color: var(--graspr-modal-border);
+    background: var(--handlr-modal-bg);
+    border-color: var(--handlr-modal-border);
 }
 
 #global-modal.modal-open [role="dialog"] {
@@ -135,7 +135,7 @@ button[disabled] {
 
 /* Modal backdrop */
 #global-modal > .absolute.inset-0 {
-    background: var(--graspr-modal-backdrop);
+    background: var(--handlr-modal-backdrop);
 }
 
 /* Darker backdrop when examples layout is active */
@@ -204,8 +204,8 @@ body:has(#app[data-layout="examples"]) #global-modal .absolute.inset-0 {
 }
 
 /* Sortable drag-and-drop */
-.sortable-ghost { opacity: 0.4; background-color: var(--graspr-surface); }
-.sortable-chosen { background-color: var(--graspr-surface); }
+.sortable-ghost { opacity: 0.4; background-color: var(--handlr-surface); }
+.sortable-chosen { background-color: var(--handlr-surface); }
 .sortable-disabled .drag-handle { visibility: hidden; pointer-events: none; }
 
 /* Active nav link — faux-bold via text-shadow to avoid layout shift */
@@ -214,35 +214,35 @@ body:has(#app[data-layout="examples"]) #global-modal .absolute.inset-0 {
 }
 
 /* ── Confirm dialog ── */
-.confirm-message   { color: var(--graspr-text); }
-.confirm-subtext   { color: var(--graspr-text-secondary); }
-.confirm-checkbox  { color: var(--graspr-text); }
+.confirm-message   { color: var(--handlr-text); }
+.confirm-subtext   { color: var(--handlr-text-secondary); }
+.confirm-checkbox  { color: var(--handlr-text); }
 .confirm-cancel-btn {
-    border-color: var(--graspr-border);
-    color: var(--graspr-text);
+    border-color: var(--handlr-border);
+    color: var(--handlr-text);
 }
-.confirm-cancel-btn:hover { background: var(--graspr-surface); }
+.confirm-cancel-btn:hover { background: var(--handlr-surface); }
 .confirm-ok-btn {
-    background: var(--graspr-primary);
-    color: var(--graspr-primary-text);
+    background: var(--handlr-primary);
+    color: var(--handlr-primary-text);
 }
-.confirm-ok-btn:hover { background: var(--graspr-primary-hover); }
+.confirm-ok-btn:hover { background: var(--handlr-primary-hover); }
 
 /* ── Toast variants ── */
-.graspr-toast-success {
-    background: var(--graspr-toast-success-bg);
-    color: var(--graspr-toast-success-text);
-    border-color: var(--graspr-toast-success-border);
+.handlr-toast-success {
+    background: var(--handlr-toast-success-bg);
+    color: var(--handlr-toast-success-text);
+    border-color: var(--handlr-toast-success-border);
 }
-.graspr-toast-warning {
-    background: var(--graspr-toast-warning-bg);
-    color: var(--graspr-toast-warning-text);
-    border-color: var(--graspr-toast-warning-border);
+.handlr-toast-warning {
+    background: var(--handlr-toast-warning-bg);
+    color: var(--handlr-toast-warning-text);
+    border-color: var(--handlr-toast-warning-border);
 }
-.graspr-toast-error {
-    background: var(--graspr-toast-error-bg);
-    color: var(--graspr-toast-error-text);
-    border-color: var(--graspr-toast-error-border);
+.handlr-toast-error {
+    background: var(--handlr-toast-error-bg);
+    color: var(--handlr-toast-error-text);
+    border-color: var(--handlr-toast-error-border);
 }
 
 /* Table column sort headers */

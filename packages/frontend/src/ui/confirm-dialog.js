@@ -1,6 +1,6 @@
 import Handlebars from 'handlebars';
 import htmx from '../lib/htmx.js';
-import { GrasprToast } from './toast.js';
+import { HandlrToast } from './toast.js';
 import {
     openGlobalModal,
     closeGlobalModal,
@@ -81,7 +81,7 @@ async function runConfirmAction() {
     }
 }
 
-export const GrasprConfirm = {
+export const HandlrConfirm = {
     /**
      * Open a confirm dialog.
      * Returns a Promise<boolean> (true = confirmed, false = canceled).
@@ -180,16 +180,16 @@ async function runConfirmRequest({ method, url, payload, refreshTarget, trigger,
 
         if (res.ok) {
             if (data && typeof data === 'object' && ('message' in data || 'status' in data)) {
-                GrasprToast?.show?.({
+                HandlrToast?.show?.({
                     message: String(data.message ?? 'Done.'),
                     status: String(data.status ?? 'success'),
                 });
             } else {
-                GrasprToast?.show?.({ message: 'Done.', status: 'success' });
+                HandlrToast?.show?.({ message: 'Done.', status: 'success' });
             }
         } else {
             const msg = data?.error || data?.message || `Request failed (${res.status})`;
-            GrasprToast?.show?.({ message: String(msg), status: 'error' });
+            HandlrToast?.show?.({ message: String(msg), status: 'error' });
             throw new Error(String(msg));
         }
     } finally {
@@ -236,8 +236,8 @@ function renderProgressUI(total, { progressLabel = 'Processing...', progressItem
     return `
         <div class="space-y-4 py-2" data-progress-container>
             <p class="text-sm font-medium confirm-message">${progressLabel}</p>
-            <div class="w-full rounded-full h-3 overflow-hidden" style="background: var(--graspr-progress-bg)">
-                <div class="confirm-progress-bar h-3 rounded-full" style="width: 0%; background: var(--graspr-progress-fill)"></div>
+            <div class="w-full rounded-full h-3 overflow-hidden" style="background: var(--handlr-progress-bg)">
+                <div class="confirm-progress-bar h-3 rounded-full" style="width: 0%; background: var(--handlr-progress-fill)"></div>
             </div>
             <p class="text-sm confirm-subtext" data-progress-text>0 of ${total} ${progressItemLabel}</p>
         </div>
@@ -297,11 +297,11 @@ async function runProgressLoop({
 
     // Show toast
     if (done === total) {
-        GrasprToast?.show?.({ message: `${done} of ${total} ${progressItemLabel}.`, status: 'success' });
+        HandlrToast?.show?.({ message: `${done} of ${total} ${progressItemLabel}.`, status: 'success' });
     } else if (done > 0) {
-        GrasprToast?.show?.({ message: `${done} of ${total} ${progressItemLabel}.`, status: 'warning' });
+        HandlrToast?.show?.({ message: `${done} of ${total} ${progressItemLabel}.`, status: 'warning' });
     } else {
-        GrasprToast?.show?.({ message: `Nothing ${progressItemLabel}.`, status: 'error' });
+        HandlrToast?.show?.({ message: `Nothing ${progressItemLabel}.`, status: 'error' });
     }
 
     notifyAfterAction({ refreshTarget, trigger, payload, eventName });
@@ -351,7 +351,7 @@ document.addEventListener('click', async (e) => {
         trigger.disabled = false;
 
         if (result === null) {
-            GrasprToast?.show?.({ message: 'Could not fetch count.', status: 'error' });
+            HandlrToast?.show?.({ message: 'Could not fetch count.', status: 'error' });
             return;
         }
 
@@ -364,7 +364,7 @@ document.addEventListener('click', async (e) => {
                 progressTotal = total;
                 preCheckForce = true;
             } else {
-                GrasprToast?.show?.({ message: 'Nothing to generate — all images already exist.', status: 'info' });
+                HandlrToast?.show?.({ message: 'Nothing to generate — all images already exist.', status: 'info' });
                 return;
             }
         } else {
@@ -374,7 +374,7 @@ document.addEventListener('click', async (e) => {
         message = message.replace('{count}', String(progressTotal));
     }
 
-    GrasprConfirm.open({
+    HandlrConfirm.open({
         message,
         subtext,
         confirmText,
@@ -390,7 +390,7 @@ document.addEventListener('click', async (e) => {
 
             // If all images existed (preCheckForce) but user unchecked — nothing to do
             if (preCheckForce && !checked) {
-                GrasprToast?.show?.({ message: 'Nothing to generate — all images already exist.', status: 'info' });
+                HandlrToast?.show?.({ message: 'Nothing to generate — all images already exist.', status: 'info' });
                 return;
             }
 

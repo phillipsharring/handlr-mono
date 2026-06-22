@@ -73,7 +73,7 @@ function renderToastHtml(data) {
 }
 
 // Public API
-export const GrasprToast = {
+export const HandlrToast = {
     show({ message, status = 'success', timeoutMs = DEFAULT_TOAST_MS } = {}) {
         const wrap = getToastWrap();
         const content = document.getElementById('global-toast-content');
@@ -94,12 +94,12 @@ export function registerToastHelpers(Handlebars) {
         // Use CSS-var-driven classes for themeable toasts
         switch (normalized) {
             case 'warning':
-                return 'graspr-toast-warning';
+                return 'handlr-toast-warning';
             case 'error':
-                return 'graspr-toast-error';
+                return 'handlr-toast-error';
             case 'success':
             default:
-                return 'graspr-toast-success';
+                return 'handlr-toast-success';
         }
     });
 }

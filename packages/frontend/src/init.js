@@ -1,5 +1,5 @@
 // ---------------------------
-// Graspr Framework initialization (side effects)
+// Handlr Framework initialization (side effects)
 // ---------------------------
 // Import this module to register all framework event listeners,
 // CSRF interceptors, boosted-nav handlers, form error handling, etc.

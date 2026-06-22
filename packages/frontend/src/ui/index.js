@@ -1,5 +1,5 @@
 export {
-    GrasprToast,
+    HandlrToast,
     registerToastHelpers,
     initToastEventHandlers,
     openToast,
@@ -19,7 +19,7 @@ export {
 
 export { openFormModal } from './modal-form.js';
 
-export { GrasprConfirm } from './confirm-dialog.js';
+export { HandlrConfirm } from './confirm-dialog.js';
 
 export {
     createBurst,
