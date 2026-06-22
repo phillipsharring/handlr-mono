@@ -1,5 +1,5 @@
 {
-    "name": "@phillipsharring/graspr-build",
+    "name": "@phillipsharring/handlr-build",
     "version": "0.6.1",
     "description": "Build mechanics for Graspr sites: HTML compiler, page baker, Vite dev plugin",
     "type": "module",
