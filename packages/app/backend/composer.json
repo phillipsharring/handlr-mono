@@ -1,0 +1,65 @@
+{
+  "name": "phillipsharring/handlr-app",
+  "description": "App skeleton for Handlr, a lightweight PHP middleware framework",
+  "type": "project",
+  "keywords": [ "framework", "handlr" ],
+  "homepage": "https://github.com/phillipsharring/handlr-app-skeleton",
+  "minimum-stability": "stable",
+  "license": "MIT",
+  "scripts": {
+    "dev": [
+      "Composer\\Config::disableProcessTimeout",
+      "php -S localhost:8000 -t public"
+    ],
+    "test": "pest",
+    "migrate": "php ./vendor/phillipsharring/handlr-framework/scripts/migrate.php up 1",
+    "migrate:fresh": "php ./vendor/phillipsharring/handlr-framework/scripts/migrate.php fresh",
+    "migrate:rollback": "php ./vendor/phillipsharring/handlr-framework/scripts/migrate.php rollback",
+    "seed": "php ./vendor/phillipsharring/handlr-framework/scripts/seed.php",
+    "seed:fresh": "php ./vendor/phillipsharring/handlr-framework/scripts/seed.php --fresh",
+    "dump-seeds": "php scripts/dump-seeds.php",
+    "fresh": "composer run migrate:fresh && composer run seed:fresh",
+    "export-fixtures": "php scripts/export-fixtures.php",
+    "make:migration": "php ./vendor/phillipsharring/handlr-framework/scripts/make.php make:migration",
+    "make:seed": "php ./vendor/phillipsharring/handlr-framework/scripts/make.php make:seeder",
+    "make:record": "php ./vendor/phillipsharring/handlr-framework/scripts/make.php make:record",
+    "make:table": "php ./vendor/phillipsharring/handlr-framework/scripts/make.php make:table",
+    "make:handler": "php ./vendor/phillipsharring/handlr-framework/scripts/make.php make:handler",
+    "make:pipe": "php ./vendor/phillipsharring/handlr-framework/scripts/make.php make:pipe",
+    "make:scaffold": "php ./vendor/phillipsharring/handlr-framework/scripts/make.php make:scaffold"
+  },
+  "authors": [
+    {
+      "name": "Phillip Harrington",
+      "email": "phillip@phillipharrington.com"
+    }
+  ],
+  "require": {
+    "php": ">=8.4",
+    "ext-pdo": "*",
+    "psr/log": "^3.0",
+    "vlucas/phpdotenv": "^5.6",
+    "ramsey/uuid": "^4.7",
+    "phillipsharring/handlr-framework": "^0.5",
+    "symfony/console": "^7.0"
+  },
+  "require-dev": {
+    "roave/security-advisories": "dev-latest",
+    "pestphp/pest": "^4.4"
+  },
+  "autoload": {
+    "psr-4": {
+      "App\\": "app/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Tests\\": "tests/"
+    }
+  },
+  "config": {
+    "allow-plugins": {
+      "pestphp/pest-plugin": true
+    }
+  }
+}
