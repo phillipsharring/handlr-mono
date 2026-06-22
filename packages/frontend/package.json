@@ -11,6 +11,14 @@
     },
     "author": "Phillip Harrington <phillip@phillipharrington.com> (https://phillipharrington.com/)",
     "license": "MIT",
+    "files": [
+        "src",
+        "styles",
+        "README.md",
+        "CHANGELOG.md",
+        "LICENSE",
+        "handlr.png"
+    ],
     "peerDependencies": {
         "handlebars": "^4.7.0",
         "htmx.org": "^2.0.0",
