@@ -7,7 +7,7 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 import { buildPages } from '../src/build-pages.mjs';
-import { grasprBuild } from '../src/vite-plugin.mjs';
+import { handlrBuild } from '../src/vite-plugin.mjs';
 import { createHtmlMinifier, resolveMinifyOptions } from '../src/minify.mjs';
 
 const BIN_PATH = fileURLToPath(new URL('../bin/build-pages.mjs', import.meta.url));
@@ -23,7 +23,7 @@ const MINIFIABLE_PAGE = '<h1>About</h1>\n\n<!-- build comment -->\n<p>   hello  
  * server while still exercising configureServer + the middleware wiring.
  */
 async function runDevMiddleware({ pagesDir, layoutsDir, componentsDir, flatRoutes, siteConfig, url }) {
-    const plugin = grasprBuild({ pagesDirs: [pagesDir], layoutsDir, componentsDir, flatRoutes, siteConfig });
+    const plugin = handlrBuild({ pagesDirs: [pagesDir], layoutsDir, componentsDir, flatRoutes, siteConfig });
     let middleware;
     plugin.configureServer({
         middlewares: { use: (fn) => { middleware = fn; } },
@@ -45,7 +45,7 @@ async function runDevMiddleware({ pagesDir, layoutsDir, componentsDir, flatRoute
  *   e.g. { app: { 'index.html': '...' }, 'modules/blog': { 'blog/index.html': '...' } }
  */
 async function makeFixture(pageRoots) {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'graspr-build-test-'));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'handlr-build-test-'));
 
     // Minimal base layout — just enough placeholders for renderPage() to substitute.
     const layoutsDir = path.join(root, 'content', 'layouts');
@@ -503,11 +503,11 @@ test('flatRoutes: keeping the parent extensionful resolves the conflict', async 
 
 // ── CLI bin: flatRoutes is read from site.config.js ──
 //
-// The standard build path is `vite build && graspr-build-pages`, where the bin
+// The standard build path is `vite build && handlr-build-pages`, where the bin
 // reads site.config.js. These run the real bin as a subprocess so the wiring
 // (config load -> buildPages) is exercised end to end, not just buildPages().
 
-test('graspr-build-pages CLI reads flatRoutes from site.config.js', async () => {
+test('handlr-build-pages CLI reads flatRoutes from site.config.js', async () => {
     const fx = await makeFixture({
         'content/pages': {
             'index.html': '<h1>Home</h1>',
@@ -534,7 +534,7 @@ test('graspr-build-pages CLI reads flatRoutes from site.config.js', async () => 
     }
 });
 
-test('graspr-build-pages CLI defaults to directory-style output (no site.config.js)', async () => {
+test('handlr-build-pages CLI defaults to directory-style output (no site.config.js)', async () => {
     const fx = await makeFixture({
         'content/pages': {
             'index.html': '<h1>Home</h1>',
@@ -552,7 +552,7 @@ test('graspr-build-pages CLI defaults to directory-style output (no site.config.
     }
 });
 
-test('graspr-build-pages CLI honors a keepExtension list from site.config.js', async () => {
+test('handlr-build-pages CLI honors a keepExtension list from site.config.js', async () => {
     const fx = await makeFixture({
         'content/pages': {
             'index.html': '<h1>Home</h1>',
@@ -626,7 +626,7 @@ test('dev middleware does not flag conflicts when flatRoutes is off', async () =
 
 // Drive the dev middleware once and return the HTML written to the response.
 async function renderDevHtml({ pagesDir, layoutsDir, componentsDir, siteConfig, devCss, url }) {
-    const plugin = grasprBuild({ pagesDirs: [pagesDir], layoutsDir, componentsDir, siteConfig, devCss });
+    const plugin = handlrBuild({ pagesDirs: [pagesDir], layoutsDir, componentsDir, siteConfig, devCss });
     let middleware;
     plugin.configureServer({
         middlewares: { use: (fn) => { middleware = fn; } },
@@ -801,7 +801,7 @@ test('minify object overrides merge onto the defaults', async () => {
     }
 });
 
-test('graspr-build-pages CLI reads minify from site.config.js', async () => {
+test('handlr-build-pages CLI reads minify from site.config.js', async () => {
     const fx = await makeFixture({
         'content/pages': { 'about.html': MINIFIABLE_PAGE },
     });

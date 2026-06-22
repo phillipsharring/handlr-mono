@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
- * graspr-build-pages CLI shim.
+ * handlr-build-pages CLI shim.
  *
  * Loads ./site.config.js (if present) from the current working directory and
  * calls buildPages(). Designed to be invoked from a package.json script:
  *
- *   "build": "vite build && graspr-build-pages"
+ *   "build": "vite build && handlr-build-pages"
  *
  * The whole config object is passed through as `siteConfig`, and the
  * `flatRoutes` / `minify` fields (if set) are forwarded as build options so the

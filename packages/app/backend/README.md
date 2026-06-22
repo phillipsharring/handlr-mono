@@ -1,31 +1,14 @@
-# Handlr App Skeleton
+# App Backend
 
-![Handlr](handlr.png)
-
-Starter project for building applications with [Handlr Framework](https://github.com/phillipsharring/handlr-framework), a lightweight PHP middleware-style framework.
+The backend half of a Handlr app, built on [Handlr Backend](https://github.com/phillipsharring/handlr-mono/tree/main/packages/backend), a lightweight PHP middleware-style framework.
 
 ## Installation
 
-### Using the Handlr Installer (recommended)
-```bash
-composer global require phillipsharring/handlr-installer:dev-main --prefer-stable
-
-handlr new my-project
-```
-
-### Using Composer
 ```bash
 composer create-project phillipsharring/handlr-app my-project
 ```
 
-### Cloning the repository
-```bash
-git clone git@github.com:phillipsharring/handlr-app.git my-project
-cd my-project
-rm -rf .git
-composer install
-git init
-```
+A `post-create-project-cmd` runs `npm install` in the frontend half, so one command sets up both sides.
 
 ## Project Structure
 

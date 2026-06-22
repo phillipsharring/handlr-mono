@@ -15,7 +15,7 @@
  *
  * @example
  * // In a module's src/index.js:
- * import { moduleRoot } from '@phillipsharring/graspr-build/modules';
+ * import { moduleRoot } from '@phillipsharring/handlr-build/modules';
  * const root = moduleRoot(import.meta.url);
  * // root = '/path/to/my-module'
  */
@@ -24,7 +24,7 @@ export function moduleRoot(importMetaUrl) {
 }
 
 /**
- * Configure a graspr module with site-specific overrides.
+ * Configure a handlr module with site-specific overrides.
  *
  * Modules export an object with `defaults` containing their default config.
  * `configure()` merges site-specific overrides on top and stores the result
@@ -36,7 +36,7 @@ export function moduleRoot(importMetaUrl) {
  * @returns {object} A new module object with merged `config`.
  *
  * @example
- * import { configure } from '@phillipsharring/graspr-build';
+ * import { configure } from '@phillipsharring/handlr-build';
  * import { landing } from '@phillipsharring/handlr-module-landing';
  *
  * // In site.config.js:

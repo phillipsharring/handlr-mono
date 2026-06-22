@@ -1,7 +1,7 @@
 {
     "name": "@phillipsharring/handlr-build",
     "version": "0.6.1",
-    "description": "Build mechanics for Graspr sites: HTML compiler, page baker, Vite dev plugin",
+    "description": "Build mechanics for Handlr sites: HTML compiler, page baker, Vite dev plugin",
     "type": "module",
     "exports": {
         ".": "./src/index.mjs",
@@ -12,7 +12,7 @@
         "./module-dirs": "./src/module-dirs.mjs"
     },
     "bin": {
-        "graspr-build-pages": "./bin/build-pages.mjs"
+        "handlr-build-pages": "./bin/build-pages.mjs"
     },
     "scripts": {
         "test": "node --test tests/*.test.mjs"
@@ -27,7 +27,7 @@
         "h.png"
     ],
     "keywords": [
-        "graspr",
+        "handlr",
         "html",
         "static-site",
         "vite-plugin",

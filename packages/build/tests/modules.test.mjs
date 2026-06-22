@@ -70,7 +70,7 @@ test('initModules with no args does not throw', () => {
 // ── resolveModuleDirs (build-time, from module-dirs.mjs) ──
 
 async function makeModuleFixture() {
-    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'graspr-modules-test-'));
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'handlr-modules-test-'));
     // Legacy convention: <root>/modules/foo/{pages,components}
     await fs.mkdir(path.join(root, 'modules', 'foo', 'pages'), { recursive: true });
     await fs.mkdir(path.join(root, 'modules', 'foo', 'components'), { recursive: true });

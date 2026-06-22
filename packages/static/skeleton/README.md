@@ -1,22 +1,13 @@
-# Graspr Static Skeleton
+# Static Site
 
-![Graspr](graspr.png)
+A static site built with [`@phillipsharring/handlr-build`](https://github.com/phillipsharring/handlr-mono/tree/main/packages/build)  - an HTML custom-tag compiler, page baker, and Vite dev plugin. No runtime framework, no HTMX, no client-side state. Just layouts, components, pages, and Tailwind.
 
-Starter project for building static sites with [`@phillipsharring/graspr-build`](https://github.com/phillipsharring/graspr-build)  - an HTML custom-tag compiler, page baker, and Vite dev plugin. No runtime framework, no HTMX, no client-side state. Just layouts, components, pages, and Tailwind.
-
-For a full app with HTMX, auth, modals, and toasts, use the [Graspr App Skeleton](https://github.com/phillipsharring/graspr-app-skeleton) instead.
+For a full app with HTMX, auth, modals, and toasts, scaffold `composer create-project phillipsharring/handlr-app` instead.
 
 ## Getting Started
 
 ```bash
-# Clone and set up
-git clone git@github.com:phillipsharring/graspr-static-skeleton.git my-site
-cd my-site
-rm -rf .git
 npm install
-git init
-
-# Start developing
 npm run dev
 ```
 
@@ -39,7 +30,7 @@ content/
     callout.html      Example custom-tag component
 public/               Static assets (favicon, images, robots.txt)
 site.config.js        Site name, URL, copyright  - injected into layouts
-vite.config.js        Vite + graspr-build + Tailwind plugins
+vite.config.js        Vite + handlr-build + Tailwind plugins
 ```
 
 ## Development
@@ -50,7 +41,7 @@ npm run build     # Production build (Vite + page compilation to dist/)
 npm run preview   # Preview production build locally
 ```
 
-The dev server renders pages on the fly through the graspr-build Vite plugin, so editing a layout, component, or page hot-reloads the browser without a full build step.
+The dev server renders pages on the fly through the handlr-build Vite plugin, so editing a layout, component, or page hot-reloads the browser without a full build step.
 
 ## Pages & Layouts
 
@@ -74,7 +65,7 @@ Every page declares its layout in a self-closing tag at the top, then the page b
 
 ### Abstract URLs
 
-Pages live in `content/pages/` as plain `.html` files and compile to `dist/<route>/index.html`. For extensionless URLs (`/about` instead of `/about/`), add a post-build step that flattens the tree  - see `phillipharrington.com` for a working example using `scripts/flatten-dist.mjs`.
+Pages live in `content/pages/` as plain `.html` files and compile to `dist/<route>/index.html`. For extensionless URLs (`/about` instead of `/about/`), set `flatRoutes: true` in `site.config.js`  - see the [handlr-build docs](https://github.com/phillipsharring/handlr-mono/tree/main/packages/build#output-shape-flatroutes).
 
 ## Components
 
@@ -125,18 +116,18 @@ Reference them in layouts and pages as `[[siteName]]`, `[[siteUrl]]`, `[[copyrig
 
 For small amounts of interactivity (hamburger menus, theme toggles, scroll effects), add it directly to `src/app.js`. The skeleton has no runtime framework to fight with  - everything is a plain vanilla script and imports nothing unless you ask.
 
-For anything larger (HTMX requests, auth-gated widgets, modal state), you probably want the [Graspr App Skeleton](https://github.com/phillipsharring/graspr-app-skeleton) instead, which bundles `@phillipsharring/graspr-framework` on top of graspr-build.
+For anything larger (HTMX requests, auth-gated widgets, modal state), you probably want the full Handlr app skeleton instead (`composer create-project phillipsharring/handlr-app`), which bundles [Handlr Frontend](https://github.com/phillipsharring/handlr-mono/tree/main/packages/frontend) on top of handlr-build.
 
-## What You Get From graspr-build
+## What You Get From handlr-build
 
-The build system (`@phillipsharring/graspr-build`) provides:
+The build system (`@phillipsharring/handlr-build`) provides:
 
 - Custom HTML tag expansion  - author pages with `<callout>`, `<heading h2>`, `<card>`, whatever you define
 - Layout system with `[[app]]` slot and `<page-head>` injection
 - `[[prop]]` / `[[{raw}]]` / `[[#if]]` / `[[slot]]` interpolation
 - File-based page routing (`content/pages/about.html` → `/about`)
 - Vite dev plugin with hot reload on layouts, components, and pages
-- `graspr-build-pages` CLI for baking pages in production builds
+- `handlr-build-pages` CLI for baking pages in production builds
 
 You own and customize: layouts, pages, components, `src/app.js`, `src/styles/`, and `site.config.js`.
 

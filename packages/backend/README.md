@@ -1,4 +1,4 @@
-# Handlr Framework
+# Handlr Backend
 
 ![Handlr](handlr.png)
 
@@ -7,10 +7,10 @@ A lightweight PHP middleware-style framework built around the **Pipe + Handler**
 ## Installation
 
 ```bash
-composer require phillipsharring/handlr-framework
+composer require phillipsharring/handlr-backend
 ```
 
-For a ready-to-go project structure, use the [Handlr App Skeleton](https://github.com/phillipsharring/handlr-app-skeleton).
+For a ready-to-go project structure, scaffold a full app with `composer create-project phillipsharring/handlr-app` (see the [app skeleton](https://github.com/phillipsharring/handlr-mono/tree/main/packages/app)).
 
 ## Architecture
 
