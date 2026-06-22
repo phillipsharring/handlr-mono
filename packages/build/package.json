@@ -1,0 +1,52 @@
+{
+    "name": "@phillipsharring/graspr-build",
+    "version": "0.6.1",
+    "description": "Build mechanics for Graspr sites: HTML compiler, page baker, Vite dev plugin",
+    "type": "module",
+    "exports": {
+        ".": "./src/index.mjs",
+        "./vite": "./src/vite-plugin.mjs",
+        "./html-compiler": "./src/html-compiler.mjs",
+        "./build-pages": "./src/build-pages.mjs",
+        "./modules": "./src/modules.mjs",
+        "./module-dirs": "./src/module-dirs.mjs"
+    },
+    "bin": {
+        "graspr-build-pages": "./bin/build-pages.mjs"
+    },
+    "scripts": {
+        "test": "node --test tests/*.test.mjs"
+    },
+    "files": [
+        "src",
+        "bin",
+        "README.md",
+        "CHANGELOG.md",
+        "LICENSE",
+        "handlr.png",
+        "h.png"
+    ],
+    "keywords": [
+        "graspr",
+        "html",
+        "static-site",
+        "vite-plugin",
+        "build"
+    ],
+    "author": "Phillip Harrington <phillip@phillipharrington.com> (https://phillipharrington.com/)",
+    "license": "MIT",
+    "engines": {
+        "node": ">=18"
+    },
+    "peerDependencies": {
+        "html-minifier-terser": "^7.0.0"
+    },
+    "peerDependenciesMeta": {
+        "html-minifier-terser": {
+            "optional": true
+        }
+    },
+    "devDependencies": {
+        "html-minifier-terser": "^7.2.0"
+    }
+}
