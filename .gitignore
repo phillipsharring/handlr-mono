@@ -2,3 +2,7 @@ node_modules/
 .DS_Store
 .env*
 .idea/
+
+# Local agent notes — not part of the published packages
+.claude/
+CLAUDE*.md
