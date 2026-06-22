@@ -1,0 +1,30 @@
+{
+    "name": "create-graspr-static",
+    "version": "0.1.0",
+    "description": "Create a new Graspr static site (Vite + Tailwind + custom HTML components)",
+    "type": "module",
+    "license": "MIT",
+    "bin": {
+        "create-graspr-static": "bin/create.mjs"
+    },
+    "keywords": [
+        "graspr",
+        "static",
+        "tailwind",
+        "vite",
+        "html",
+        "components",
+        "create",
+        "scaffold",
+        "cli"
+    ],
+    "homepage": "https://github.com/phillipsharring/graspr-static-installer",
+    "author": "Phillip Harrington",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/phillipsharring/graspr-static-installer.git"
+    },
+    "engines": {
+        "node": ">=18"
+    }
+}
