@@ -1,17 +1,17 @@
 {
-    "name": "my-graspr-site",
+    "name": "my-handlr-site",
     "version": "1.0.0",
     "description": "",
     "type": "module",
     "private": true,
     "scripts": {
         "dev": "vite",
-        "build": "vite build && graspr-build-pages",
+        "build": "vite build && handlr-build-pages",
         "preview": "vite preview"
     },
     "author": "",
     "devDependencies": {
-        "@phillipsharring/graspr-build": "^0.2.1",
+        "@phillipsharring/handlr-build": "^0.6.1",
         "@tailwindcss/vite": "^4.1.18",
         "tailwindcss": "^4.1.18",
         "vite": "^7.3.0"

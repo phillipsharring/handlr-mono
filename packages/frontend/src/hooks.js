@@ -6,7 +6,7 @@
 // htmx:afterSwap / DOMContentLoaded listeners scattered across pages.
 //
 // Usage from app code:
-//   import { onAfterSwap } from '@phillipsharring/graspr-framework';
+//   import { onAfterSwap } from '@phillipsharring/handlr-frontend';
 //   onAfterSwap(function(target) { initMyWidget(target); });
 //
 // Usage from inline page scripts:

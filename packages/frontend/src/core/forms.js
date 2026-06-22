@@ -6,7 +6,7 @@
 // Fully self-registering — import for side effects only.
 
 import htmx from '../lib/htmx.js';
-import { GrasprToast } from '../ui/toast.js';
+import { HandlrToast } from '../ui/toast.js';
 import {
     openGlobalModal,
     closeGlobalModal,
@@ -190,7 +190,7 @@ document.body.addEventListener('htmx:beforeSwap', (e) => {
             detail.shouldSwap = true; // Allow HTMX to swap the error response into toast
         } else {
             detail.shouldSwap = false;
-            GrasprToast?.show?.({ message, status: 'error' });
+            HandlrToast?.show?.({ message, status: 'error' });
         }
     }
 });

@@ -7,7 +7,7 @@
 
 import Sortable from 'sortablejs';
 import htmx from '../lib/htmx.js';
-import { GrasprToast } from '../ui/toast.js';
+import { HandlrToast } from '../ui/toast.js';
 
 const instances = new WeakMap();
 
@@ -75,10 +75,10 @@ function initSortable(container) {
                     return res.json();
                 })
                 .then(() => {
-                    GrasprToast?.show({ message: 'Sort order updated.', status: 'success' });
+                    HandlrToast?.show({ message: 'Sort order updated.', status: 'success' });
                 })
                 .catch(() => {
-                    GrasprToast?.show({ message: 'Failed to update sort order.', status: 'error' });
+                    HandlrToast?.show({ message: 'Failed to update sort order.', status: 'error' });
                     // Reload server state
                     if (typeof htmx?.trigger === 'function') {
                         htmx.trigger(container, 'refresh');

@@ -9,7 +9,7 @@ import htmx from '../lib/htmx.js';
 import { checkAuth, getAuthData, refreshAuthData } from '../auth.js';
 import { isGlobalModalOpen } from '../ui/index.js';
 import { openFormModal } from '../ui/modal-form.js';
-import { GrasprToast } from '../ui/toast.js';
+import { HandlrToast } from '../ui/toast.js';
 
 // ---------------------------
 // Header widget refresh
@@ -193,7 +193,7 @@ document.body.addEventListener('htmx:beforeSwap', (e) => {
         // CSRF failure — the response includes a fresh token (captured by
         // the htmx:afterRequest hook in csrf.js), so the next request will work.
         e.detail.shouldSwap = false;
-        GrasprToast.show({ message: 'Session expired, please try again.', status: 'warning' });
+        HandlrToast.show({ message: 'Session expired, please try again.', status: 'warning' });
     }
 }, true); // Use capture to run before other beforeSwap handlers
 

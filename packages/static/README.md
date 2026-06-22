@@ -1,5 +1,7 @@
 # @phillipsharring/create-handlr-static
 
+![Handlr](handlr.png)
+
 Scaffold a new [Handlr](https://github.com/phillipsharring/handlr-mono) static site (Vite + Tailwind + custom HTML components).
 
 ## Usage

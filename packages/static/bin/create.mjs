@@ -1,15 +1,17 @@
 #!/usr/bin/env node
 
 import { execSync } from 'node:child_process';
-import { existsSync, rmSync } from 'node:fs';
+import { cpSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const REPO = 'https://github.com/phillipsharring/graspr-static-skeleton.git';
+// The static skeleton ships inside this package, one level up from bin/.
+const SKELETON = fileURLToPath(new URL('../skeleton', import.meta.url));
 
 const name = process.argv[2];
 
 if (!name) {
-    console.error('\n  Usage: npm create graspr-static <project-name>\n');
+    console.error('\n  Usage: npm create @phillipsharring/handlr-static <project-name>\n');
     process.exit(1);
 }
 
@@ -20,20 +22,17 @@ if (existsSync(dir)) {
     process.exit(1);
 }
 
-console.log(`\n  Creating a new Graspr static site in ${dir}\n`);
+console.log(`\n  Creating a new Handlr static site in ${dir}\n`);
 
-// Clone the static skeleton
-console.log('  Cloning static skeleton...');
+// Copy the bundled skeleton into the target directory
+console.log('  Copying static skeleton...');
 try {
-    execSync(`git clone --depth 1 ${REPO} "${dir}"`, { stdio: 'pipe' });
+    cpSync(SKELETON, dir, { recursive: true });
 } catch (err) {
-    console.error('  Failed to clone the static skeleton. Check your network connection.');
+    console.error('  Failed to copy the static skeleton.');
+    console.error(`  ${err.message}`);
     process.exit(1);
 }
-
-// Remove .git so it's a fresh project
-console.log('  Removing VCS history...');
-rmSync(resolve(dir, '.git'), { recursive: true, force: true });
 
 // Install dependencies
 console.log('  Installing dependencies...\n');
@@ -46,12 +45,12 @@ try {
 }
 
 console.log(`
-  Done! Your new Graspr static site is ready.
+  Done! Your new Handlr static site is ready.
 
   Next steps:
 
     cd ${name}
     npm run dev
 
-  Documentation: https://github.com/phillipsharring/graspr-static-skeleton
+  Documentation: https://github.com/phillipsharring/handlr-mono/tree/main/packages/static
 `);

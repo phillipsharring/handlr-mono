@@ -12,7 +12,7 @@ Dev stylesheet link (no more FOUC).
 
 ### Added
 
-- `grasprBuild({ devCss })` (also settable as `devCss` in `site.config.js`) -- dev-only URL of the source stylesheet, e.g. `/styles/style.css`. When set, dev pages render a real render-blocking `<link rel="stylesheet">` instead of relying on JS-injected CSS, eliminating the flash of unstyled content on load and navigation. Vite still hot-reloads the linked stylesheet, so HMR is unaffected. The production build ignores it (it uses the hashed CSS from the manifest). Defaults to unset — unchanged behavior.
+- `handlrBuild({ devCss })` (also settable as `devCss` in `site.config.js`) -- dev-only URL of the source stylesheet, e.g. `/styles/style.css`. When set, dev pages render a real render-blocking `<link rel="stylesheet">` instead of relying on JS-injected CSS, eliminating the flash of unstyled content on load and navigation. Vite still hot-reloads the linked stylesheet, so HMR is unaffected. The production build ignores it (it uses the hashed CSS from the manifest). Defaults to unset — unchanged behavior.
 
 ## 0.5.0
 
@@ -20,15 +20,15 @@ Browser-safe module runtime.
 
 ### Fixed
 
-- `@phillipsharring/graspr-build/modules` no longer pulls Node-only code into app browser bundles. `modules.mjs` previously co-located the runtime helper `initModules()` with the build-time `resolveModuleDirs()`, which does `import { existsSync } from 'node:fs'`. Any app whose browser entry imported `initModules` (e.g. to init a module like handlr-module-landing) failed its production `rollup` build with `"existsSync" is not exported by "__vite-browser-external"`. The runtime side is now free of `node:` imports, and a test guards against regressions.
+- `@phillipsharring/handlr-build/modules` no longer pulls Node-only code into app browser bundles. `modules.mjs` previously co-located the runtime helper `initModules()` with the build-time `resolveModuleDirs()`, which does `import { existsSync } from 'node:fs'`. Any app whose browser entry imported `initModules` (e.g. to init a module like handlr-module-landing) failed its production `rollup` build with `"existsSync" is not exported by "__vite-browser-external"`. The runtime side is now free of `node:` imports, and a test guards against regressions.
 
 ### Changed (breaking)
 
-- **`resolveModuleDirs()` moved** from `@phillipsharring/graspr-build/modules` to a new build-only subpath `@phillipsharring/graspr-build/module-dirs`. It touches the filesystem, so it no longer ships alongside the browser-safe runtime. It is still re-exported from the package root (`@phillipsharring/graspr-build`).
+- **`resolveModuleDirs()` moved** from `@phillipsharring/handlr-build/modules` to a new build-only subpath `@phillipsharring/handlr-build/module-dirs`. It touches the filesystem, so it no longer ships alongside the browser-safe runtime. It is still re-exported from the package root (`@phillipsharring/handlr-build`).
   - **Migration:** in your build script / `vite.config.js`, change
-    `import { resolveModuleDirs } from '@phillipsharring/graspr-build/modules'`
-    to `import { resolveModuleDirs } from '@phillipsharring/graspr-build/module-dirs'`.
-  - `@phillipsharring/graspr-build/modules` still exports the browser-safe `initModules`, `configure`, and `moduleRoot` — those imports are unchanged.
+    `import { resolveModuleDirs } from '@phillipsharring/handlr-build/modules'`
+    to `import { resolveModuleDirs } from '@phillipsharring/handlr-build/module-dirs'`.
+  - `@phillipsharring/handlr-build/modules` still exports the browser-safe `initModules`, `configure`, and `moduleRoot` — those imports are unchanged.
 
 ## 0.4.0
 
@@ -37,14 +37,14 @@ Dist shape options.
 ### Added
 
 - `buildPages({ flatRoutes: true })` -- emit extensionless sibling files (`dist/about`) instead of directory-style `dist/about/index.html`, for hosts that serve abstract URLs (`/about`, not `/about/`). Replaces the per-site `scripts/flatten-dist.mjs` post-processor that consumers were copying around.
-  - **Configured once in `site.config.js`** via a `flatRoutes` field. The `graspr-build-pages` CLI forwards it to the build, and `grasprBuild({ siteConfig })` falls back to the same field, so dev and prod read one source of truth. The explicit `flatRoutes` option on `buildPages()`/`grasprBuild()` still overrides.
+  - **Configured once in `site.config.js`** via a `flatRoutes` field. The `handlr-build-pages` CLI forwards it to the build, and `handlrBuild({ siteConfig })` falls back to the same field, so dev and prod read one source of truth. The explicit `flatRoutes` option on `buildPages()`/`handlrBuild()` still overrides.
   - Root stays `dist/index.html`; the `404` page is kept as `dist/404.html` by default.
   - Override the keep-list with route keys: `flatRoutes: { keepExtension: ['404', 'errors/offline'] }`. The list replaces the default.
   - Nested-route conflicts (a `/blog/` page flattening to `dist/blog` while a `/blog/post/` page needs `dist/blog/` to be a directory) are a hard error naming both source files — same conflict semantics as the cross-root duplicate-route check.
-  - The `grasprBuild()` Vite plugin accepts the same option. Dev serving is unchanged (it already resolves `/about` without redirects); the option only runs the matching nested-route conflict check so `vite dev` fails like `npm run build`.
+  - The `handlrBuild()` Vite plugin accepts the same option. Dev serving is unchanged (it already resolves `/about` without redirects); the option only runs the matching nested-route conflict check so `vite dev` fails like `npm run build`.
   - Default `flatRoutes: false` — no behavior change.
 - `buildPages({ minify: true })` -- minify each baked page via the optional `html-minifier-terser` peer dependency.
-  - Also configured via a `minify` field in `site.config.js`, forwarded by the `graspr-build-pages` CLI (same centralized pattern as `flatRoutes`).
+  - Also configured via a `minify` field in `site.config.js`, forwarded by the `handlr-build-pages` CLI (same centralized pattern as `flatRoutes`).
   - `true` uses sensible defaults (`removeAttributeQuotes`, `collapseWhitespace`, `removeComments`, `removeRedundantAttributes`, `removeScriptTypeAttributes`, `removeTagWhitespace`); pass an object to override individual options (merged onto the defaults).
   - `html-minifier-terser` is declared as an optional peer dependency — loaded lazily only when minify is on. If it's requested but missing, the build throws a clear install hint before rendering any page.
   - Build-only: `vite dev` always serves unminified HTML. Default `minify: false` — no behavior change.
@@ -97,8 +97,8 @@ Module system.
 ### Added
 
 - `configure(mod, overrides)` -- shallow-merges site-specific config onto a module's defaults. Modules registered without `configure()` use their own defaults.
-- `resolveModuleDirs(rootDir, modules)` -- resolves an array of module entries into `pagesDirs` and `componentsDirs` for graspr-build. Accepts both module objects (from npm packages, self-resolving via `import.meta.url`) and legacy strings (local directory names under `modules/`).
-- New export path: `@phillipsharring/graspr-build/modules` for the module utilities.
+- `resolveModuleDirs(rootDir, modules)` -- resolves an array of module entries into `pagesDirs` and `componentsDirs` for handlr-build. Accepts both module objects (from npm packages, self-resolving via `import.meta.url`) and legacy strings (local directory names under `modules/`).
+- New export path: `@phillipsharring/handlr-build/modules` for the module utilities.
 
 ### How it works
 
@@ -107,7 +107,7 @@ Modules are plain objects with `name`, `pagesDir`, `componentsDir`, `defaults`, 
 ```js
 // site.config.js
 import { landing } from '@phillipsharring/handlr-module-landing';
-import { configure } from '@phillipsharring/graspr-build/modules';
+import { configure } from '@phillipsharring/handlr-build/modules';
 
 export default {
     modules: [
@@ -129,7 +129,7 @@ Multi-root page discovery for frontend modules.
 
 ### Added
 
-- `buildPages({ pagesDirs })` and `grasprBuild({ pagesDirs })` accept an array of page directories. Files from all roots are merged and routed by their relative path within their own root, so a module's `modules/blog/pages/posts/index.html` produces `/posts/` exactly the way `content/pages/posts/index.html` would.
+- `buildPages({ pagesDirs })` and `handlrBuild({ pagesDirs })` accept an array of page directories. Files from all roots are merged and routed by their relative path within their own root, so a module's `modules/blog/pages/posts/index.html` produces `/posts/` exactly the way `content/pages/posts/index.html` would.
 - `componentsDirs` option exposed alongside the existing back-compat `componentsDir`. Internally `renderPage()` already supported arrays  - this just plumbs the option through `buildPages()` and the dev plugin.
 - Test suite (`npm test`, runs on `node:test`) covering multi-root walking, conflict detection, ordering, and back-compat.
 
@@ -143,14 +143,14 @@ Multi-root page discovery for frontend modules.
 
 ## 0.1.0
 
-Initial release. Extracted from `graspr-app-skeleton`'s `scripts/` directory and `vite.config.js` plugin block.
+Initial release. Extracted from `handlr-app-skeleton`'s `scripts/` directory and `vite.config.js` plugin block.
 
 ### Exports
 
 - `renderPage(...)`  - single-page HTML compiler with custom-tag expansion, layout resolution, `<page-head>` extraction, and `[[prop]]`/`[[#if]]`/`[[slot]]` interpolation
 - `buildPages({ root, siteConfig, ... })`  - bake every page under `content/pages/` to `dist/<route>/index.html`
-- `grasprBuild({ siteConfig })` from `@phillipsharring/graspr-build/vite`  - Vite dev middleware that renders pages on the fly during `vite dev`
-- `graspr-build-pages` bin  - CLI shim around `buildPages()` for use in `package.json` scripts
+- `handlrBuild({ siteConfig })` from `@phillipsharring/handlr-build/vite`  - Vite dev middleware that renders pages on the fly during `vite dev`
+- `handlr-build-pages` bin  - CLI shim around `buildPages()` for use in `package.json` scripts
 
 ### API notes
 

@@ -1,9 +1,9 @@
 // ---------------------------
-// Graspr Framework — barrel export
+// Handlr Framework — barrel export
 // ---------------------------
-// Public API for apps to import from '@phillipsharring/graspr-framework'.
+// Public API for apps to import from '@phillipsharring/handlr-frontend'.
 // Side-effect modules (csrf, boosted-nav, auth-state, forms, search, sortable)
-// are NOT imported here — use '@phillipsharring/graspr-framework/init' for those.
+// are NOT imported here — use '@phillipsharring/handlr-frontend/init' for those.
 
 // Auth
 export { checkAuth, getAuthData, refreshAuthData } from './auth.js';
@@ -33,7 +33,7 @@ export { getCsrfToken, setCsrfToken } from './core/csrf.js';
 
 // UI — toast
 export {
-    GrasprToast,
+    HandlrToast,
     registerToastHelpers,
     initToastEventHandlers,
     openToast,
@@ -56,7 +56,7 @@ export {
 export { openFormModal } from './ui/modal-form.js';
 
 // UI — confirm dialog
-export { GrasprConfirm } from './ui/confirm-dialog.js';
+export { HandlrConfirm } from './ui/confirm-dialog.js';
 
 // UI — click burst
 export { createBurst, attachClickBurst, initClickBurst } from './ui/click-burst.js';

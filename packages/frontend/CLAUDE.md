@@ -1,8 +1,8 @@
-# Graspr Frontend Framework  - Claude Code Notes
+# Handlr Frontend Framework  - Claude Code Notes
 
 ## Architecture
 
-HTMX + Handlebars + Tailwind CSS frontend framework, built with Vite. Installed via npm as `@phillipsharring/graspr-framework`.
+HTMX + Handlebars + Tailwind CSS frontend framework, built with Vite. Installed via npm as `@phillipsharring/handlr-frontend`.
 
 ## HTMX Boosted Navigation (CRITICAL)
 
@@ -160,7 +160,7 @@ On the `<form>` element:
 ## Lifecycle Hooks
 
 ```js
-import { onPageLoad, onAfterSwap, onAfterSettle } from '@phillipsharring/graspr-framework';
+import { onPageLoad, onAfterSwap, onAfterSettle } from '@phillipsharring/handlr-frontend';
 onPageLoad(function(doc) { ... });      // DOMContentLoaded (safe if already fired)
 onAfterSwap(function(target) { ... });  // #app swap via boosted nav
 onAfterSettle(function(target) { ... }); // after HTMX processes hx-trigger on new elements
@@ -176,9 +176,9 @@ window.App = {
     getRouteParams,
     escapeHtml,
     ui: {
-        toast: GrasprToast,
+        toast: HandlrToast,
         modal: { open, close, isOpen },
-        confirm: GrasprConfirm,
+        confirm: HandlrConfirm,
         openFormModal,
     },
     hooks: { onAfterSwap, onAfterSettle, onPageLoad },
@@ -192,7 +192,7 @@ The namespace name is app-specific (not framework-defined).
 App's `style.css` must scan framework JS for dynamic class names:
 
 ```css
-@source "../../node_modules/@phillipsharring/graspr-framework/src/**/*.js";
+@source "../../node_modules/@phillipsharring/handlr-frontend/src/**/*.js";
 ```
 
 Tailwind v4 doesn't detect classes in inline `<script>` tags. Use `@source inline("...")` to safelist dynamic class names built in JS.

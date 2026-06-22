@@ -129,7 +129,7 @@ async function buildRouteIndex(pagesDirs, projectRoot, flatRoutes = null) {
 }
 
 /**
- * Vite plugin: middleware that renders Graspr pages on the fly during `vite dev`.
+ * Vite plugin: middleware that renders Handlr pages on the fly during `vite dev`.
  *
  * Supports multi-root page discovery so frontend modules can drop their own
  * `pages/` directories into the build without touching app code. Resolution
