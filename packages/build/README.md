@@ -1,15 +1,15 @@
-# @phillipsharring/graspr-build
+# @phillipsharring/handlr-build
 
-![Graspr](graspr.png)
+![Handlr](handlr.png)
 
-Build mechanics for [Graspr](https://github.com/phillipsharring/graspr-framework) sites: HTML compiler, static page baker, and Vite dev plugin.
+Build mechanics for [Handlr](https://github.com/phillipsharring/handlr-mono) sites: HTML compiler, static page baker, and Vite dev plugin.
 
-This package contains everything needed to **build** a Graspr site, separate from the runtime concerns (HTMX, Handlebars, auth) that live in `@phillipsharring/graspr-framework`. Static sites can depend on `graspr-build` alone; full apps depend on both.
+This package contains everything needed to **build** a Handlr site, separate from the runtime concerns (HTMX, Handlebars, auth) that live in [`@phillipsharring/handlr-frontend`](https://github.com/phillipsharring/handlr-mono/tree/main/packages/frontend). Static sites can depend on `handlr-build` alone; full apps depend on both.
 
 ## Install
 
 ```bash
-npm install -D @phillipsharring/graspr-build vite @tailwindcss/vite tailwindcss
+npm install -D @phillipsharring/handlr-build vite @tailwindcss/vite tailwindcss
 ```
 
 ## Project shape
@@ -33,13 +33,13 @@ my-site/
 ```js
 import { defineConfig } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
-import { grasprBuild } from '@phillipsharring/graspr-build/vite';
+import { handlrBuild } from '@phillipsharring/handlr-build/vite';
 import siteConfig from './site.config.js';
 
 export default defineConfig({
     root: 'src',
     publicDir: '../public',
-    plugins: [tailwindcss(), grasprBuild({ siteConfig })],
+    plugins: [tailwindcss(), handlrBuild({ siteConfig })],
     build: {
         outDir: '../dist',
         manifest: true,
@@ -55,7 +55,7 @@ export default defineConfig({
 {
     "scripts": {
         "dev": "vite",
-        "build": "vite build && graspr-build-pages",
+        "build": "vite build && handlr-build-pages",
         "preview": "vite preview"
     }
 }
@@ -98,7 +98,7 @@ Custom tags can be either HTML custom-element style (`<my-callout>`  - must cont
 ## Programmatic API
 
 ```js
-import { renderPage, buildPages } from '@phillipsharring/graspr-build';
+import { renderPage, buildPages } from '@phillipsharring/handlr-build';
 
 // Bake all pages under content/pages/ to dist/
 await buildPages({ root: process.cwd(), siteConfig });
@@ -116,7 +116,7 @@ const html = await renderPage({
 
 ### `componentsDir`: string or array
 
-`renderPage` accepts `componentsDir` as either a single directory or an array of directories. When resolving a custom tag like `<callout>`, the compiler tries each directory in order and uses the first match. This enables a future module system to contribute partials from `src/modules/*/partials/` alongside the project-level `content/components/` without changing the API.
+`renderPage` accepts `componentsDir` as either a single directory or an array of directories. When resolving a custom tag like `<callout>`, the compiler tries each directory in order and uses the first match. This enables a module system to contribute partials from `src/modules/*/partials/` alongside the project-level `content/components/` without changing the API.
 
 ## Output shape: `flatRoutes`
 
@@ -134,7 +134,7 @@ Set `flatRoutes: true` to emit extensionless sibling files instead — handy whe
 /blog/post/  -> dist/blog/post
 ```
 
-**Set it once in `site.config.js`** — both the `graspr-build-pages` build step and the dev plugin read it from there, so dev and prod stay consistent:
+**Set it once in `site.config.js`** — both the `handlr-build-pages` build step and the dev plugin read it from there, so dev and prod stay consistent:
 
 ```js
 // site.config.js
@@ -145,7 +145,7 @@ export default {
 };
 ```
 
-The `graspr-build-pages` CLI forwards `siteConfig.flatRoutes` to the build, and `grasprBuild({ siteConfig })` in `vite.config.js` falls back to the same field — no extra wiring needed. (You can still pass `flatRoutes` directly to `buildPages()` or `grasprBuild()` to override the config field, e.g. in a custom build script: `await buildPages({ root: process.cwd(), siteConfig, flatRoutes: true })`.)
+The `handlr-build-pages` CLI forwards `siteConfig.flatRoutes` to the build, and `handlrBuild({ siteConfig })` in `vite.config.js` falls back to the same field — no extra wiring needed. (You can still pass `flatRoutes` directly to `buildPages()` or `handlrBuild()` to override the config field, e.g. in a custom build script: `await buildPages({ root: process.cwd(), siteConfig, flatRoutes: true })`.)
 
 - The root route always stays `dist/index.html` (it can't be an extensionless file).
 - The `404` page is kept as `dist/404.html` by default, since CloudFront and most static hosts want a real `.html` file for the error document. Override the keep-list with route keys (no slashes): `flatRoutes: { keepExtension: ['404', 'errors/offline'] }`. The list **replaces** the default, so include `404` if you still want it kept.
@@ -179,13 +179,13 @@ npm install -D html-minifier-terser
 - Minification is **build-only** — `vite dev` always serves unminified HTML so it stays readable for debugging.
 - Default is `minify: false` — no behavior change. With it off, the peer dep is never loaded or required.
 
-Like `flatRoutes`, the `graspr-build-pages` CLI reads `minify` from `site.config.js`; you can also pass it directly to `buildPages({ ..., minify: true })` in a custom build script.
+Like `flatRoutes`, the `handlr-build-pages` CLI reads `minify` from `site.config.js`; you can also pass it directly to `buildPages({ ..., minify: true })` in a custom build script.
 
 ## Dev stylesheet: avoiding FOUC
 
 In dev, Vite serves CSS that's `import`ed from your JS entry by injecting it via JavaScript *after* the script runs — so pages can paint unstyled for a moment (flash of unstyled content), most visible on content-heavy static sites. Production is unaffected (the hashed `<link>` from the manifest is render-blocking).
 
-To fix dev, point graspr-build at your source stylesheet so it emits a real render-blocking `<link>`:
+To fix dev, point handlr-build at your source stylesheet so it emits a real render-blocking `<link>`:
 
 ```js
 // site.config.js
@@ -198,14 +198,14 @@ export default {
 
 **The `?direct` query is required.** Vite serves a processed `.css` module as JavaScript (`Content-Type: text/javascript`) so it can inject + HMR it — and the browser *refuses* a `<link rel="stylesheet">` with that MIME type. Vite's `?direct` query forces it to return the compiled CSS as real `text/css`, which is what makes the link render-blocking. (If `devCss` points at a static file in `public/` or a CDN, it's already real CSS — omit `?direct`.)
 
-`grasprBuild({ siteConfig })` reads it (or pass `grasprBuild({ devCss: '…' })` directly). Vite still hot-reloads the linked stylesheet, so HMR is unaffected. Keep importing the CSS from your JS entry too — that's what bundles it for the production build; in dev it just loads alongside the link harmlessly. The build ignores `devCss`.
+`handlrBuild({ siteConfig })` reads it (or pass `handlrBuild({ devCss: '…' })` directly). Vite still hot-reloads the linked stylesheet, so HMR is unaffected. Keep importing the CSS from your JS entry too — that's what bundles it for the production build; in dev it just loads alongside the link harmlessly. The build ignores `devCss`.
 
 ## Hosting
 
-graspr-build emits a plain `dist/` tree — host it anywhere that serves static files. Two deployment notes:
+handlr-build emits a plain `dist/` tree — host it anywhere that serves static files. Two deployment notes:
 
 - **`flatRoutes` and `Content-Type` on S3.** Extensionless files (`dist/about`) have no extension for S3 to infer a MIME type from, so a naive `aws s3 sync` tags them `application/octet-stream` (or `binary/octet-stream`) and CloudFront serves them as a download instead of a page. After syncing, re-tag the extensionless objects as `text/html` — e.g. a small `apply-metadata` step that runs `aws s3 cp` with `--content-type text/html --metadata-directive REPLACE` over the flattened routes. Files kept with their extension (`index.html`, `404.html`) are unaffected.
-- **The Vite build manifest is cleaned up for you.** `vite build` writes `dist/.vite/manifest.json` for graspr-build to read asset hashes from; `buildPages()` deletes it (and the now-empty `.vite/` dir) once those hashes are baked into the pages, so it never reaches your bucket. No `--exclude '.vite/*'` needed on the sync.
+- **The Vite build manifest is cleaned up for you.** `vite build` writes `dist/.vite/manifest.json` for handlr-build to read asset hashes from; `buildPages()` deletes it (and the now-empty `.vite/` dir) once those hashes are baked into the pages, so it never reaches your bucket. No `--exclude '.vite/*'` needed on the sync.
 
 ## License
 

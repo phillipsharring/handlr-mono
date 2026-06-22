@@ -153,14 +153,14 @@ async function buildRouteIndex(pagesDirs, projectRoot, flatRoutes = null) {
  * @param {boolean|{keepExtension?: string[]}} [opts.flatRoutes] - Match the build's extensionless-output mode. Falls back to `siteConfig.flatRoutes` when omitted, so setting it once in `site.config.js` covers both dev and build. Dev serving is unaffected (URLs already resolve without redirects); this only enables the nested-route conflict check so dev fails like prod. Defaults to `false`.
  * @param {string} [opts.devCss] - Dev-only: URL of the source stylesheet, with Vite's `?direct` query (e.g. `/styles/style.css?direct`). `?direct` is required for a Vite-processed CSS module — without it Vite serves the file as a JS module (`text/javascript`) and the browser refuses it as a stylesheet. When set, dev pages get a render-blocking `<link rel="stylesheet">` instead of relying on JS-injected CSS, eliminating the flash of unstyled content. Vite still hot-reloads it. Falls back to `siteConfig.devCss`. Ignored by the production build (which uses the hashed CSS from the manifest).
  */
-export function grasprBuild(opts = {}) {
+export function handlrBuild(opts = {}) {
     const siteConfig = opts.siteConfig || {};
     const jsSrc = opts.jsSrc || '/app.js';
     const flatRoutes = resolveFlatRoutes(opts.flatRoutes ?? siteConfig.flatRoutes);
     const devCss = opts.devCss ?? siteConfig.devCss ?? null;
 
     return {
-        name: 'graspr-build:dev-baked-pages',
+        name: 'handlr-build:dev-baked-pages',
         apply: 'serve',
         configureServer(server) {
             const projectRoot = process.cwd();

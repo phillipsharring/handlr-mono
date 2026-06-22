@@ -1,20 +1,17 @@
-# create-graspr-static
+# @phillipsharring/create-handlr-static
 
-![Graspr](graspr.png)
-
-Scaffold a new [Graspr](https://github.com/phillipsharring/graspr-static-skeleton) static site (Vite + Tailwind + custom HTML components).
+Scaffold a new [Handlr](https://github.com/phillipsharring/handlr-mono) static site (Vite + Tailwind + custom HTML components).
 
 ## Usage
 
 ```bash
-npm create graspr-static my-site
+npm create @phillipsharring/handlr-static my-site
 ```
 
 This will:
 
-1. Clone the [Graspr static skeleton](https://github.com/phillipsharring/graspr-static-skeleton)
-2. Remove git history (fresh start)
-3. Install npm dependencies
+1. Copy the bundled static skeleton into `my-site/`
+2. Install npm dependencies
 
 Then:
 
@@ -33,23 +30,18 @@ A Vite-powered static site with:
 - **File-based page routing** (`content/pages/about.html` → `/about`)
 - Hot reload in dev, page compilation for production
 
-No HTMX, no Handlebars runtime, no client-side state. Just layouts, components, pages, and Tailwind.
+No HTMX, no Handlebars runtime, no client-side state. Just layouts, components, pages, and Tailwind. The build is powered by [`@phillipsharring/handlr-build`](https://github.com/phillipsharring/handlr-mono/tree/main/packages/build).
 
 ## Requirements
 
 - Node.js 18+
-- Git
 
 ## Full app?
 
-For a full-stack app with HTMX, auth, modals, and toasts, use [create-graspr-app](https://github.com/phillipsharring/graspr-installer) instead:
+For a full-stack app with HTMX, auth, modals, and toasts, scaffold the Handlr app skeleton instead:
 
 ```bash
-npm create graspr-app my-app
+composer create-project phillipsharring/handlr-app my-app
 ```
 
-Pair with [Handlr](https://github.com/phillipsharring/handlr-installer) for the backend:
-
-```bash
-composer create-project phillipsharring/handlr-app my-app-backend
-```
+That pulls in [Handlr Frontend](https://github.com/phillipsharring/handlr-mono/tree/main/packages/frontend) (runtime) and [Handlr Backend](https://github.com/phillipsharring/handlr-mono/tree/main/packages/backend) (PHP) together.

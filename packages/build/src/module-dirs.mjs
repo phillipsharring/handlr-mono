@@ -2,13 +2,13 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 
 /**
- * Resolve an array of module entries into the directories graspr-build should
+ * Resolve an array of module entries into the directories handlr-build should
  * scan for pages and components. Called by both `vite.config.js` (dev server)
  * and the production page baker so they discover the same set.
  *
  * This is **build-time only** — it touches the filesystem (`node:fs`), so it
  * lives apart from the browser-safe runtime helpers in `./modules.mjs`. Import
- * it from `@phillipsharring/graspr-build/module-dirs` (or the package root),
+ * it from `@phillipsharring/handlr-build/module-dirs` (or the package root),
  * never from a browser bundle.
  *
  * Accepts two forms:

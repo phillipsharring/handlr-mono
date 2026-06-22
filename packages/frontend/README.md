@@ -1,15 +1,17 @@
-# Graspr Framework
+# Handlr Frontend
 
-![Graspr](graspr.png)
+![Handlr](handlr.png)
 
-A frontend framework for building server-driven web applications with **HTMX + Handlebars + Tailwind CSS**.
+The frontend runtime for building server-driven web applications with **HTMX + Handlebars + Tailwind CSS**.
 
-Graspr handles the hard parts of HTMX-based apps: boosted navigation, auth-gated widgets, modal/toast systems, CSRF token management, form error handling, and client-side template rendering  - so you can focus on your pages and domain logic.
+`@phillipsharring/handlr-frontend` handles the hard parts of HTMX-based apps: boosted navigation, auth-gated widgets, modal/toast systems, CSRF token management, form error handling, and client-side template rendering  - so you can focus on your pages and domain logic.
+
+It is the runtime companion to [`@phillipsharring/handlr-build`](https://github.com/phillipsharring/handlr-mono/tree/main/packages/build) (build tooling) and [`phillipsharring/handlr-backend`](https://github.com/phillipsharring/handlr-mono/tree/main/packages/backend) (the PHP backend).
 
 ## Installation
 
 ```bash
-npm install @phillipsharring/graspr-framework
+npm install @phillipsharring/handlr-frontend
 ```
 
 Peer dependencies (your app must install these):
@@ -17,7 +19,7 @@ Peer dependencies (your app must install these):
 npm install htmx.org handlebars sortablejs
 ```
 
-For a ready-to-go project structure, use the [Graspr App Skeleton](https://github.com/phillipsharring/graspr-app-skeleton).
+For a ready-to-go project structure, scaffold a full app with `composer create-project phillipsharring/handlr-app` (see the [app skeleton](https://github.com/phillipsharring/handlr-mono/tree/main/packages/app)).
 
 ## What's Included
 
@@ -68,23 +70,23 @@ For a ready-to-go project structure, use the [Graspr App Skeleton](https://githu
 ### Import everything at once
 ```js
 import {
-    GrasprToast, openFormModal, GrasprConfirm,
+    HandlrToast, openFormModal, HandlrConfirm,
     initPagination, initTableSort,
     getRouteParams, escapeHtml,
-} from '@phillipsharring/graspr-framework';
+} from '@phillipsharring/handlr-frontend';
 ```
 
 ### Side-effect initialization
 ```js
 // Registers CSRF interceptors, boosted-nav handlers, auth-state listeners,
 // form error handling, search, and sortable  - in the correct order.
-import '@phillipsharring/graspr-framework/init';
+import '@phillipsharring/handlr-frontend/init';
 ```
 
 ### HTMX extensions (import after setting window.Handlebars)
 ```js
-import '@phillipsharring/graspr-framework/src/lib/json-enc.js';
-import '@phillipsharring/graspr-framework/src/lib/client-side-templates.js';
+import '@phillipsharring/handlr-frontend/src/lib/json-enc.js';
+import '@phillipsharring/handlr-frontend/src/lib/client-side-templates.js';
 ```
 
 ### Styles
@@ -92,12 +94,12 @@ import '@phillipsharring/graspr-framework/src/lib/client-side-templates.js';
 @import 'tailwindcss';
 @source "../../content/**/*.html";
 @source "../**/*.js";
-@import '@phillipsharring/graspr-framework/styles/base.css';
+@import '@phillipsharring/handlr-frontend/styles/base.css';
 ```
 
 ### Configurable auth permissions
 ```js
-import { registerAdminPermissionPrefixes } from '@phillipsharring/graspr-framework';
+import { registerAdminPermissionPrefixes } from '@phillipsharring/handlr-frontend';
 
 registerAdminPermissionPrefixes([
     ['/admin/design/', 'design.access'],
@@ -108,7 +110,7 @@ registerAdminPermissionPrefixes([
 
 ## Designed For
 
-Graspr is the frontend companion to [Handlr Framework](https://github.com/phillipsharring/handlr-framework) (PHP backend), but works with any backend that serves JSON APIs and HTML pages. The auth system expects a `/api/auth/me` endpoint; everything else is configurable.
+Handlr Frontend is the companion to [Handlr Backend](https://github.com/phillipsharring/handlr-mono/tree/main/packages/backend) (PHP), but works with any backend that serves JSON APIs and HTML pages. The auth system expects a `/api/auth/me` endpoint; everything else is configurable.
 
 ## Requirements
 
