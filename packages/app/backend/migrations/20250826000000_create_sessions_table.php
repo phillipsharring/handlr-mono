@@ -1,0 +1,27 @@
+<?php
+
+declare(strict_types=1);
+
+use Handlr\Database\Migrations\BaseMigration;
+
+class Migration_20250826000000_CreateSessionsTable extends BaseMigration
+{
+    public function up(): void
+    {
+        $sql = <<<'SQL'
+            CREATE TABLE IF NOT EXISTS `sessions` (
+                `id` VARCHAR(32) NOT NULL PRIMARY KEY,
+                `data` TEXT,
+                `access` INT UNSIGNED DEFAULT NULL
+            ) ENGINE=InnoDB
+            DEFAULT CHARSET=utf8mb4
+            COLLATE=utf8mb4_0900_ai_ci;
+        SQL;
+        $this->exec($sql);
+    }
+
+    public function down(): void
+    {
+        $this->exec('DROP TABLE IF EXISTS `sessions`;');
+    }
+}

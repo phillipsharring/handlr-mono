@@ -1,5 +1,5 @@
 {
-    "name": "create-graspr-static",
+    "name": "@phillipsharring/create-handlr-static",
     "version": "0.1.0",
     "description": "Create a new Graspr static site (Vite + Tailwind + custom HTML components)",
     "type": "module",
