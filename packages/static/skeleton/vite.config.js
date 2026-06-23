@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
 import { handlrBuild } from '@phillipsharring/handlr-build/vite';
-import { resolveModuleDirs } from '@phillipsharring/handlr-build/modules';
+import { resolveModuleDirs } from '@phillipsharring/handlr-build/module-dirs';
 import siteConfig from './site.config.js';
 
 const projectRoot = path.dirname(fileURLToPath(import.meta.url));
