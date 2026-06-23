@@ -1,0 +1,290 @@
+<layout name="admin" title="User Detail" />
+
+<div class="space-y-6">
+    <div class="flex items-center gap-3">
+        <component file="back-link.html" href="/admin/users/accounts/">Back to Accounts</component>
+    </div>
+
+    <component file="admin-detail-loader.html"
+        id="user-detail" trigger="load, reload-user-detail-event from:body"
+        template="user-detail-template" class="space-y-6"
+    >(Loading user...)</component>
+
+    <div id="roles-section">
+        <div class="border rounded">
+            <div class="flex items-center justify-between px-4 py-3 bg-slate-50 border-b">
+                <h2 class="text-sm font-semibold text-slate-700">Roles</h2>
+            </div>
+            <component file="admin-detail-loader.html"
+                id="roles-form-container" url="/api/admin/roles/for-select"
+                trigger="load, reload-user-detail-event from:body"
+                template="roles-form-template" class="p-4" small
+            >(Loading roles...)</component>
+        </div>
+    </div>
+
+    <template id="user-detail-template">
+        <input id="user-role-ids" type="hidden" value="{{json role_ids}}" />
+
+        {{#if blocked_at}}
+        <div class="bg-red-50 border border-red-200 rounded-lg px-4 py-3 flex items-center justify-between">
+            <div>
+                <span class="text-sm font-medium text-red-800">This account is blocked</span>
+                <span class="text-xs text-red-600 ml-2">{{formatDateTime blocked_at}}</span>
+            </div>
+            <button type="button" class="text-sm text-red-700 hover:text-red-900 underline font-medium" id="btn-unblock">Unblock</button>
+        </div>
+        {{/if}}
+
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold">{{name}}</h1>
+                <div class="mt-2 flex items-center gap-2">
+                    <span class="font-mono text-sm text-slate-600" title="{{id}}">{{truncate id 6}}</span>
+                    {{> copyIdBtn}}
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                {{#unless blocked_at}}
+                <button type="button" class="border border-red-200 text-red-600 rounded px-4 py-2 hover:bg-red-50 text-sm" id="btn-block">Block</button>
+                {{/unless}}
+                <button
+                    id="open-edit-user-modal"
+                    type="button"
+                    class="border rounded px-4 py-2 hover:bg-slate-50"
+                    data-user-id="{{id}}"
+                    data-user-name="{{name}}"
+                    data-user-email="{{email}}"
+                >
+                    Edit
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div class="border rounded p-4 bg-slate-50">
+                <h2 class="text-sm font-semibold text-slate-700 mb-2">Account</h2>
+                <div class="space-y-2 text-sm">
+                    <div class="flex gap-2">
+                        <span class="text-slate-500 w-28">Email:</span>
+                        <span>{{email}}</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <span class="text-slate-500 w-28">Verified:</span>
+                        <span class="font-mono">{{formatDateTime email_verified_at}}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border rounded p-4 bg-slate-50">
+                <h2 class="text-sm font-semibold text-slate-700 mb-2">Activity</h2>
+                <div class="space-y-2 text-sm">
+                    <div class="flex gap-2">
+                        <span class="text-slate-500 w-28">Last Login:</span>
+                        <span class="font-mono">{{formatDateTime last_login_at}}</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <span class="text-slate-500 w-28">Created:</span>
+                        <span class="font-mono">{{formatDateTime created_at}}</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <span class="text-slate-500 w-28">Updated:</span>
+                        <span class="font-mono">{{formatDateTime updated_at}}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="roles-form-template">
+        <form
+            id="roles-form"
+            class="space-y-3"
+            hx-ext="json-enc"
+            hx-patch=""
+            hx-target="#global-toast-content"
+            hx-swap="innerHTML"
+            handlebars-template="global-toast-template"
+            hx-disabled-elt="button[type='submit']"
+            data-refresh-event="reload-user-detail-event"
+            data-form-errors="inline"
+        >
+            {{#each data}}
+            <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" value="{{id}}" class="role-checkbox rounded" />
+                <span class="text-sm font-medium">{{name}}</span>
+            </label>
+            {{/each}}
+
+            <div class="pt-2">
+                <button type="submit" class="rounded px-3 py-2 bg-slate-900 text-white hover:bg-slate-800 text-sm">
+                    Save roles
+                </button>
+            </div>
+        </form>
+    </template>
+
+    <template id="edit-user-form-template">
+        <form
+            class="space-y-4"
+            method="patch"
+            hx-ext="json-enc"
+            hx-patch=""
+            hx-target="#global-toast-content"
+            hx-swap="innerHTML"
+            handlebars-template="global-toast-template"
+            hx-disabled-elt="button[type='submit']"
+            data-refresh-event="reload-user-detail-event"
+            data-form-errors="inline"
+        >
+            <div class="form-field">
+                <label for="edit-user-name" class="block text-sm font-medium">Name</label>
+                <input
+                    name="name"
+                    id="edit-user-name"
+                    class="mt-1 border rounded px-3 py-2 w-full"
+                    autocomplete="off"
+                    required
+                />
+                <div class="field-error-text hidden"></div>
+            </div>
+
+            <div class="form-field">
+                <label for="edit-user-email" class="block text-sm font-medium">Email</label>
+                <input
+                    name="email"
+                    id="edit-user-email"
+                    type="email"
+                    class="mt-1 border rounded px-3 py-2 w-full"
+                    autocomplete="off"
+                    required
+                />
+                <div class="field-error-text hidden"></div>
+            </div>
+
+            {{> formButtons label="Update"}}
+        </form>
+    </template>
+</div>
+
+<script>
+function getUserId() {
+    const params = App.getRouteParams?.('/admin/users/[id]/');
+    return params?.id || null;
+}
+
+function initHtmxUrls() {
+    const userId = getUserId();
+    if (!userId) {
+        document.getElementById('user-detail').innerHTML = '<div class="text-red-600">No user ID in URL</div>';
+        return;
+    }
+
+    const userDetail = document.getElementById('user-detail');
+    if (userDetail) {
+        userDetail.setAttribute('hx-get', `/api/admin/users/${userId}`);
+    }
+
+    window.htmx?.process?.(userDetail);
+}
+
+// After user detail loads, check the role checkboxes that match the user's role_ids
+// and set up the roles form action URL.
+function initRolesForm() {
+    const userId = getUserId();
+    if (!userId) return;
+
+    const userDetail = document.getElementById('user-detail');
+    const rolesForm = document.getElementById('roles-form');
+    if (!rolesForm) return;
+
+    // Set the PATCH URL for the roles form
+    rolesForm.setAttribute('hx-patch', `/api/admin/users/${userId}/roles`);
+    window.htmx?.process?.(rolesForm);
+
+    // Get role_ids from the user detail response (stored in a hidden input).
+    // This may not exist yet if user-detail hasn't loaded — that's fine,
+    // we'll be called again when user-detail swaps.
+    const roleIdsInput = userDetail?.querySelector('#user-role-ids');
+    if (roleIdsInput) {
+        const roleIds = JSON.parse(roleIdsInput.value || '[]');
+        rolesForm.querySelectorAll('.role-checkbox').forEach(function(cb) {
+            cb.checked = roleIds.includes(parseInt(cb.value));
+        });
+    }
+
+    // Collect checked role IDs and set as a JSON string.
+    // Guard against duplicate listeners on re-init.
+    if (!rolesForm.dataset.configWired) {
+        rolesForm.dataset.configWired = 'true';
+        rolesForm.addEventListener('htmx:configRequest', function(e) {
+            var checked = rolesForm.querySelectorAll('.role-checkbox:checked');
+            var ids = Array.from(checked).map(function(cb) { return parseInt(cb.value); });
+            e.detail.parameters.role_ids = JSON.stringify(ids);
+        });
+    }
+}
+
+// Both loads race — whichever finishes second triggers the checkbox wiring.
+document.getElementById('user-detail').addEventListener('htmx:afterSwap', function() {
+    initRolesForm();
+});
+document.getElementById('roles-form-container').addEventListener('htmx:afterSwap', function() {
+    initRolesForm();
+});
+
+// Modal handlers
+function openEditUserModal(btn) {
+    App.ui.openFormModal({
+        templateId: 'edit-user-form-template',
+        title: 'Edit user',
+        formUrl: `/api/admin/users/${btn.dataset.userId}`,
+        formMethod: 'patch',
+        fields: {
+            name: btn.dataset.userName,
+            email: btn.dataset.userEmail,
+        },
+    });
+}
+
+document.getElementById('user-detail').addEventListener('click', function(e) {
+    const btn = e.target.closest('#open-edit-user-modal');
+    if (btn) openEditUserModal(btn);
+
+    // Block user
+    if (e.target.closest('#btn-block')) {
+        App.ui.confirm.open({
+            message: 'Block this user?',
+            subtext: 'They will be logged out on their next request and unable to sign in.',
+            confirmText: 'Block User',
+            cancelText: 'Cancel',
+            onConfirm: function() {
+                return App.api.fetch(`/api/admin/users/${getUserId()}/block`, {
+                    method: 'PATCH',
+                    body: { blocked: true }
+                })
+                .then(function(r) { return r.json(); })
+                .then(function(res) {
+                    App.ui.toast.show({ message: res.message, status: 'success' });
+                    window.htmx.trigger(document.getElementById('user-detail'), 'reload-user-detail-event');
+                });
+            }
+        });
+    }
+
+    // Unblock user
+    if (e.target.closest('#btn-unblock')) {
+        App.api.fetch(`/api/admin/users/${getUserId()}/block`, {
+            method: 'PATCH',
+            body: { blocked: false }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+            App.ui.toast.show({ message: res.message, status: 'success' });
+            window.htmx.trigger(document.getElementById('user-detail'), 'reload-user-detail-event');
+        });
+    }
+});
+
+window.onReady(initHtmxUrls);
+</script>

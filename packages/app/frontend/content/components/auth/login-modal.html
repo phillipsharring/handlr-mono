@@ -1,0 +1,64 @@
+<!-- Login modal template and handlers -->
+<template id="login-form-template">
+    <form
+        class="space-y-4"
+        method="post"
+        action="/api/auth/login"
+        hx-ext="json-enc"
+        hx-post="/api/auth/login"
+        hx-target="#global-toast-content"
+        hx-swap="innerHTML"
+        handlebars-template="global-toast-template"
+        hx-disabled-elt="button[type='submit']"
+        data-form-errors="inline"
+    >
+        <div class="form-field">
+            <label for="login-email" class="block text-sm font-medium">Email</label>
+            <input
+                type="email"
+                name="email"
+                id="login-email"
+                class="mt-1 border rounded px-3 py-2 w-full"
+                placeholder="you@example.com"
+                autocomplete="email"
+                required
+            />
+            <div class="field-error-text hidden"></div>
+        </div>
+
+        <div class="form-field">
+            <label for="login-password" class="block text-sm font-medium">Password</label>
+            <input
+                type="password"
+                name="password"
+                id="login-password"
+                class="mt-1 border rounded px-3 py-2 w-full"
+                placeholder="Your password"
+                autocomplete="current-password"
+                required
+            />
+            <div class="field-error-text hidden"></div>
+        </div>
+
+        <div class="flex items-center justify-between pt-2">
+            <label class="flex items-center gap-2 text-sm text-slate-500">
+                <input type="checkbox" name="remember_me" value="1" class="rounded" />
+                Remember me
+            </label>
+            <a href="/forgot-password/" class="text-sm text-slate-500 hover:text-slate-700">Forgot password?</a>
+        </div>
+
+        {{> formButtons label="Login"}}
+    </form>
+</template>
+
+<script>
+(function() {
+    // Logout redirect on success
+    document.getElementById('logout-link')?.addEventListener('htmx:afterRequest', function(e) {
+        if (e.detail.successful) {
+            window.location.href = '/';
+        }
+    });
+})();
+</script>

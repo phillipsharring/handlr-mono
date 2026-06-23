@@ -1,0 +1,4 @@
+# root scaffold artifacts (backend/ and frontend/ have their own .gitignore)
+/vendor/
+/composer.lock
+.DS_Store

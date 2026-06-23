@@ -1,0 +1,10 @@
+<layout name="admin" title="Admin" />
+
+<div class="max-w-2xl">
+    <h1 class="text-2xl font-bold mb-4">Admin</h1>
+    <p class="text-slate-600 mb-6">Manage users, roles, and permissions.</p>
+
+    <div class="grid gap-4 sm:grid-cols-2">
+        <component file="admin-nav-card.html" href="/admin/users/" title="Users" permission="admin.access">User accounts and role management</component>
+    </div>
+</div>

@@ -1,0 +1,158 @@
+<layout name="admin" title="Permissions" />
+
+<div class="space-y-6">
+    <div class="flex items-center gap-3">
+        <h1 class="text-2xl font-bold">Permissions</h1>
+        <button
+            id="open-create-permission-modal"
+            class="ml-auto border rounded px-3 py-2 hover:bg-slate-50"
+            type="button"
+        >
+            Create permission
+        </button>
+    </div>
+    <div class="overflow-auto border rounded">
+        <table class="min-w-full text-sm table-fixed">
+            <thead class="bg-slate-300 text-slate-800 font-bold border-b">
+                <tr class="text-left">
+                    <th class="px-4 py-3 font-medium w-[10%]">ID</th>
+                    <th class="px-4 py-3 font-medium w-[40%]">Name</th>
+                    <th class="px-4 py-3 font-medium w-[20%]">Created</th>
+                    <th class="px-4 py-3 font-medium w-[20%]">Updated</th>
+                    <th class="px-4 py-3 font-medium w-[10%]">Action</th>
+                </tr>
+            </thead>
+            <component file="admin-list-tbody.html"
+                id="permissions-tbody" url="/api/admin/permissions" trigger="load, refresh"
+                template="permissions-rows-template" colspan="5" class="divide-y"
+            >(Loading permissions…)</component>
+        </table>
+    </div>
+
+    <template id="permissions-rows-template">
+        {{#each data}}
+        <tr class="even:bg-slate-100 hover:bg-yellow-50">
+            <td class="px-4 py-3 align-top font-mono text-xs text-slate-600">{{id}}</td>
+            <td class="px-4 py-3 text-slate-900 align-top font-mono text-sm">{{name}}</td>
+            <td class="px-4 py-3 text-slate-600 align-top">
+                <span class="font-mono text-xs">{{formatDateTime created_at}}</span>
+            </td>
+            <td class="px-4 py-3 text-slate-600 align-top">
+                <span class="font-mono text-xs">{{formatDateTime updated_at}}</span>
+            </td>
+            <td class="px-4 py-3 text-slate-700 align-top">
+                <button
+                    type="button"
+                    class="border rounded px-3 py-1.5 text-xs hover:bg-slate-50"
+                    data-action="open-edit-permission-modal"
+                    data-permission-id="{{id}}"
+                    data-permission-name="{{name}}"
+                >
+                    edit
+                </button>
+            </td>
+        </tr>
+        {{else}}
+        <tr>
+            <td class="px-4 py-3 text-slate-500 align-top" colspan="5">(No permissions found.)</td>
+        </tr>
+        {{/each}}
+    </template>
+
+    <template id="create-permission-form-template">
+        <form
+            class="space-y-4"
+            method="post"
+            action="/api/admin/permissions"
+            hx-ext="json-enc"
+            hx-post="/api/admin/permissions"
+            hx-target="#global-toast-content"
+            hx-swap="innerHTML"
+            handlebars-template="global-toast-template"
+            hx-disabled-elt="button[type='submit']"
+            data-refresh-target="#permissions-tbody"
+            data-form-errors="inline"
+        >
+            <div class="form-field">
+                <label for="create-permission-name" class="block text-sm font-medium">Name</label>
+                <input
+                    name="name"
+                    id="create-permission-name"
+                    class="mt-1 border rounded px-3 py-2 w-full"
+                    placeholder="e.g. moderation.access"
+                    autocomplete="off"
+                    required
+                />
+                <div class="field-error-text hidden"></div>
+            </div>
+
+            {{> formButtons label="Create"}}
+        </form>
+    </template>
+
+    <template id="edit-permission-form-template">
+        <form
+            class="space-y-4"
+            method="patch"
+            hx-ext="json-enc"
+            hx-patch=""
+            hx-target="#global-toast-content"
+            hx-swap="innerHTML"
+            handlebars-template="global-toast-template"
+            hx-disabled-elt="button[type='submit']"
+            data-refresh-target="#permissions-tbody"
+            data-form-errors="inline"
+        >
+            <div class="form-field">
+                <label for="edit-permission-name" class="block text-sm font-medium">Name</label>
+                <input
+                    name="name"
+                    id="edit-permission-name"
+                    class="mt-1 border rounded px-3 py-2 w-full"
+                    autocomplete="off"
+                    required
+                />
+                <div class="field-error-text hidden"></div>
+            </div>
+
+            {{> formButtons label="Update"}}
+        </form>
+    </template>
+</div>
+
+<script>
+function openCreatePermissionModal() {
+    App.ui.openFormModal({
+        templateId: 'create-permission-form-template',
+        title: 'Create permission',
+    });
+}
+
+function openEditPermissionModal(btn) {
+    App.ui.openFormModal({
+        templateId: 'edit-permission-form-template',
+        title: 'Edit permission',
+        formUrl: `/api/admin/permissions/${btn.dataset.permissionId}`,
+        formMethod: 'patch',
+        fields: {
+            name: btn.dataset.permissionName,
+        },
+    });
+}
+
+function permissionsClickHandler(e) {
+    const editBtn = e.target.closest('button[data-action="open-edit-permission-modal"]');
+    if (editBtn) {
+        openEditPermissionModal(editBtn);
+        return;
+    }
+
+    const createBtn = e.target.closest('#open-create-permission-modal');
+    if (createBtn) {
+        openCreatePermissionModal();
+    }
+}
+
+document.getElementById('open-create-permission-modal').addEventListener('click', permissionsClickHandler);
+document.getElementById('permissions-tbody').addEventListener('click', permissionsClickHandler);
+</script>

@@ -1,0 +1,97 @@
+<layout name="base" title="Reset Password" />
+
+<div class="max-w-sm mx-auto mt-10">
+    <h1 class="text-xl font-bold text-slate-700 text-center mb-6">Reset Password</h1>
+
+    <div class="bg-white border border-slate-200 rounded-lg p-6">
+        <form
+            id="reset-password-form"
+            class="space-y-4"
+            method="post"
+            action="/api/auth/reset-password"
+            hx-ext="json-enc"
+            hx-post="/api/auth/reset-password"
+            hx-target="#global-toast-content"
+            hx-swap="innerHTML"
+            handlebars-template="global-toast-template"
+            hx-disabled-elt="button[type='submit']"
+            data-form-errors="inline"
+        >
+            <input type="hidden" name="token" id="reset-token" />
+
+            <div class="form-field">
+                <label for="reset-password" class="block text-sm font-medium">New Password</label>
+                <input
+                    type="password"
+                    name="password"
+                    id="reset-password"
+                    class="mt-1 border border-slate-200 rounded px-3 py-2 w-full"
+                    placeholder="Min 8 characters"
+                    autocomplete="new-password"
+                    minlength="8"
+                    required
+                />
+                <div class="field-error-text hidden"></div>
+            </div>
+
+            <div class="form-field">
+                <label for="reset-password-confirmation" class="block text-sm font-medium">Confirm Password</label>
+                <input
+                    type="password"
+                    name="password_confirmation"
+                    id="reset-password-confirmation"
+                    class="mt-1 border border-slate-200 rounded px-3 py-2 w-full"
+                    placeholder="Repeat your password"
+                    autocomplete="new-password"
+                    required
+                />
+                <div class="field-error-text hidden"></div>
+            </div>
+
+            <button
+                type="submit"
+                class="w-full rounded px-3 py-2 bg-slate-800 text-white hover:bg-slate-700 font-medium"
+            >Reset Password</button>
+        </form>
+
+        <!-- Success state (hidden until submit succeeds) -->
+        <div id="reset-success" class="hidden text-center py-4">
+            <p class="text-sm text-slate-600">Your password has been reset.</p>
+            <a href="/login/" class="inline-block mt-3 rounded px-5 py-2 bg-slate-800 text-white hover:bg-slate-700 font-medium text-sm no-underline">Login</a>
+        </div>
+
+        <!-- Invalid/missing token state -->
+        <div id="reset-invalid" class="hidden text-center py-4">
+            <p class="text-sm text-slate-600">This reset link is invalid or missing.</p>
+            <a href="/forgot-password/" class="inline-block mt-3 text-sm text-slate-700 hover:text-slate-900 font-medium">Request a new one</a>
+        </div>
+    </div>
+</div>
+
+<script>
+window.onReady(function() {
+    var params = new URLSearchParams(window.location.search);
+    var token = params.get('token');
+    var form = document.getElementById('reset-password-form');
+    var invalid = document.getElementById('reset-invalid');
+
+    if (!token) {
+        form.classList.add('hidden');
+        invalid.classList.remove('hidden');
+        return;
+    }
+
+    document.getElementById('reset-token').value = token;
+
+    form.addEventListener('htmx:afterRequest', function(e) {
+        if (!e.detail.successful) return;
+        try {
+            var data = JSON.parse(e.detail.xhr.responseText);
+            if (data.status === 'success') {
+                form.classList.add('hidden');
+                document.getElementById('reset-success').classList.remove('hidden');
+            }
+        } catch (_) {}
+    });
+});
+</script>

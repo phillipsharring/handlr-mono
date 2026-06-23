@@ -1,0 +1,65 @@
+<layout name="base" title="Forgot Password" />
+
+<div class="max-w-sm mx-auto mt-10">
+    <h1 class="text-xl font-bold text-slate-700 text-center mb-6">Forgot Password</h1>
+
+    <div class="bg-white border border-slate-200 rounded-lg p-6">
+        <p class="text-sm text-slate-500 mb-4">Enter your email and we'll send you a link to reset your password.</p>
+
+        <form
+            id="forgot-password-form"
+            class="space-y-4"
+            method="post"
+            action="/api/auth/forgot-password"
+            hx-ext="json-enc"
+            hx-post="/api/auth/forgot-password"
+            hx-target="#global-toast-content"
+            hx-swap="innerHTML"
+            handlebars-template="global-toast-template"
+            hx-disabled-elt="button[type='submit']"
+            data-form-errors="inline"
+        >
+            <div class="form-field">
+                <label for="forgot-email" class="block text-sm font-medium">Email</label>
+                <input
+                    type="email"
+                    name="email"
+                    id="forgot-email"
+                    class="mt-1 border border-slate-200 rounded px-3 py-2 w-full"
+                    placeholder="you@example.com"
+                    autocomplete="email"
+                    required
+                />
+                <div class="field-error-text hidden"></div>
+            </div>
+
+            <button
+                type="submit"
+                class="w-full rounded px-3 py-2 bg-slate-800 text-white hover:bg-slate-700 font-medium"
+            >Send Reset Link</button>
+        </form>
+
+        <!-- Success state (hidden until submit succeeds) -->
+        <div id="forgot-success" class="hidden text-center py-4">
+            <p class="text-sm text-slate-600">If that email is registered, you'll receive a reset link shortly.</p>
+            <p class="text-sm text-slate-400 mt-2">Check your inbox (and spam folder).</p>
+        </div>
+
+        <p class="mt-4 text-center text-sm text-slate-500">
+            Remember your password?
+            <a href="/login/" class="text-slate-700 hover:text-slate-900 font-medium">Login</a>
+        </p>
+    </div>
+</div>
+
+<script>
+var forgotForm = document.getElementById('forgot-password-form');
+if (forgotForm) {
+    forgotForm.addEventListener('htmx:afterRequest', function(e) {
+        if (!e.detail.successful) return;
+        // Hide the form, show the success message
+        forgotForm.classList.add('hidden');
+        document.getElementById('forgot-success').classList.remove('hidden');
+    });
+}
+</script>

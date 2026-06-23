@@ -1,0 +1,223 @@
+<layout name="admin" title="Accounts" />
+
+<div class="space-y-6">
+    <div class="flex items-center gap-3">
+        <h1 class="text-2xl font-bold">Accounts</h1>
+        <input
+            type="search"
+            id="users-search"
+            name="search"
+            class="ms-auto border rounded px-3 py-2 flex-1 max-w-md"
+            placeholder="Search…"
+            autocomplete="off"
+            data-search-target="#users-tbody"
+            data-search-endpoint="/api/admin/users"
+        />
+        <button
+            id="open-create-user-modal"
+            class="border rounded px-3 py-2 hover:bg-slate-50"
+            type="button"
+        >
+            Create user
+        </button>
+    </div>
+    <div class="overflow-auto border rounded">
+        <table class="min-w-full text-sm table-fixed">
+            <thead class="bg-slate-300 text-slate-800 font-bold border-b">
+                <tr class="text-left">
+                    <th class="px-4 py-3 font-medium w-[10%]">ID</th>
+                    <th class="px-4 py-3 font-medium w-[25%]" data-sort="name">Name</th>
+                    <th class="px-4 py-3 font-medium w-[25%]" data-sort="email">Email</th>
+                    <th class="px-4 py-3 font-medium w-[15%]">Roles</th>
+                    <th class="px-4 py-3 font-medium w-[15%]" data-sort="last_login_at">Last Login</th>
+                    <th class="px-4 py-3 font-medium w-[10%]">Action</th>
+                </tr>
+            </thead>
+            <component file="admin-list-tbody.html"
+                id="users-tbody" url="/api/admin/users" trigger="load, refresh"
+                template="users-rows-template" paginated colspan="6" class="divide-y"
+            >(Loading users…)</component>
+        </table>
+    </div>
+
+    <pagination></pagination>
+
+    <template id="users-rows-template">
+        {{#each data}}
+        <tr class="even:bg-slate-100 hover:bg-yellow-50">
+            <td class="px-4 py-3 align-top">
+                <div class="flex items-center gap-1.5">
+                    <span class="font-mono text-xs text-slate-600" title="{{id}}">{{truncate id 6}}</span>
+                    {{> copyIdBtn}}
+                </div>
+            </td>
+            <td class="px-4 py-3 text-slate-900 align-top" hx-ext="ignore:client-side-templates">
+                <a
+                    href="/admin/users/{{id}}/"
+                    class="hover:underline"
+                >{{name}}</a>
+            </td>
+            <td class="px-4 py-3 text-slate-600 align-top">{{email}}</td>
+            <td class="px-4 py-3 text-slate-600 align-top text-xs">{{roles}}</td>
+            <td class="px-4 py-3 text-slate-600 align-top">
+                <span class="font-mono text-xs">{{formatDateTime last_login_at}}</span>
+            </td>
+            <td class="px-4 py-3 text-slate-700 align-top">
+                <button
+                    type="button"
+                    class="border rounded px-3 py-1.5 text-xs hover:bg-slate-50"
+                    data-action="open-edit-user-modal"
+                    data-user-id="{{id}}"
+                    data-user-name="{{name}}"
+                    data-user-email="{{email}}"
+                >
+                    edit
+                </button>
+            </td>
+        </tr>
+        {{else}}
+        <tr>
+            <td class="px-4 py-3 text-slate-500 align-top" colspan="6">(No users found.)</td>
+        </tr>
+        {{/each}}
+    </template>
+
+    <template id="create-user-form-template">
+        <form
+            class="space-y-4"
+            method="post"
+            action="/api/admin/users"
+            hx-ext="json-enc"
+            hx-post="/api/admin/users"
+            hx-target="#global-toast-content"
+            hx-swap="innerHTML"
+            handlebars-template="global-toast-template"
+            hx-disabled-elt="button[type='submit']"
+            data-refresh-target="#users-tbody"
+            data-form-errors="inline"
+        >
+            <div class="form-field">
+                <label for="create-user-name" class="block text-sm font-medium">Name</label>
+                <input
+                    name="name"
+                    id="create-user-name"
+                    class="mt-1 border rounded px-3 py-2 w-full"
+                    placeholder="e.g. Jane Doe"
+                    autocomplete="off"
+                    required
+                />
+                <div class="field-error-text hidden"></div>
+            </div>
+
+            <div class="form-field">
+                <label for="create-user-email" class="block text-sm font-medium">Email</label>
+                <input
+                    name="email"
+                    id="create-user-email"
+                    type="email"
+                    class="mt-1 border rounded px-3 py-2 w-full"
+                    placeholder="e.g. jane@example.com"
+                    autocomplete="off"
+                    required
+                />
+                <div class="field-error-text hidden"></div>
+            </div>
+
+            <div class="form-field">
+                <label for="create-user-password" class="block text-sm font-medium">Password</label>
+                <input
+                    name="password"
+                    id="create-user-password"
+                    type="password"
+                    class="mt-1 border rounded px-3 py-2 w-full"
+                    placeholder="Min 8 characters"
+                    autocomplete="new-password"
+                    required
+                />
+                <div class="field-error-text hidden"></div>
+            </div>
+
+            {{> formButtons label="Create"}}
+        </form>
+    </template>
+
+    <template id="edit-user-form-template">
+        <form
+            class="space-y-4"
+            method="patch"
+            hx-ext="json-enc"
+            hx-patch=""
+            hx-target="#global-toast-content"
+            hx-swap="innerHTML"
+            handlebars-template="global-toast-template"
+            hx-disabled-elt="button[type='submit']"
+            data-refresh-target="#users-tbody"
+            data-form-errors="inline"
+        >
+            <div class="form-field">
+                <label for="edit-user-name" class="block text-sm font-medium">Name</label>
+                <input
+                    name="name"
+                    id="edit-user-name"
+                    class="mt-1 border rounded px-3 py-2 w-full"
+                    autocomplete="off"
+                    required
+                />
+                <div class="field-error-text hidden"></div>
+            </div>
+
+            <div class="form-field">
+                <label for="edit-user-email" class="block text-sm font-medium">Email</label>
+                <input
+                    name="email"
+                    id="edit-user-email"
+                    type="email"
+                    class="mt-1 border rounded px-3 py-2 w-full"
+                    autocomplete="off"
+                    required
+                />
+                <div class="field-error-text hidden"></div>
+            </div>
+
+            {{> formButtons label="Update"}}
+        </form>
+    </template>
+</div>
+
+<script>
+function openCreateUserModal() {
+    App.ui.openFormModal({
+        templateId: 'create-user-form-template',
+        title: 'Create user',
+    });
+}
+
+function openEditUserModal(btn) {
+    App.ui.openFormModal({
+        templateId: 'edit-user-form-template',
+        title: 'Edit user',
+        formUrl: `/api/admin/users/${btn.dataset.userId}`,
+        formMethod: 'patch',
+        fields: {
+            name: btn.dataset.userName,
+            email: btn.dataset.userEmail,
+        },
+    });
+}
+
+function usersClickHandler(e) {
+    const editBtn = e.target.closest('button[data-action="open-edit-user-modal"]');
+    if (editBtn) {
+        openEditUserModal(editBtn);
+        return;
+    }
+
+    const createBtn = e.target.closest('#open-create-user-modal');
+    if (createBtn) {
+        openCreateUserModal();
+    }
+}
+
+document.getElementById('open-create-user-modal').addEventListener('click', usersClickHandler);
+document.getElementById('users-tbody').addEventListener('click', usersClickHandler);
+</script>

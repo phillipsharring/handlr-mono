@@ -5,7 +5,7 @@
   "type": "library",
   "license": "MIT",
   "keywords": [ "framework", "handlr" ],
-  "homepage": "https://github.com/phillipsharring/handlr-framework",
+  "homepage": "https://github.com/phillipsharring/handlr-mono/tree/main/packages/backend",
   "authors": [
     {
       "name": "Phillip Harrington",
