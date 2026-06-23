@@ -1,0 +1,25 @@
+{
+    "name": "phillipsharring/handlr-app",
+    "description": "Full-stack Handlr app skeleton — HTMX/Handlebars/Tailwind frontend + PHP Pipe+Handler backend, scaffolded in one command",
+    "type": "project",
+    "license": "MIT",
+    "homepage": "https://github.com/phillipsharring/handlr-mono/tree/main/packages/app",
+    "authors": [
+        {
+            "name": "Phillip Harrington",
+            "email": "phillip@phillipharrington.com"
+        }
+    ],
+    "require": {
+        "php": ">=8.4"
+    },
+    "scripts": {
+        "post-create-project-cmd": [
+            "@composer install --working-dir=backend --no-interaction",
+            "npm --prefix frontend install"
+        ]
+    },
+    "scripts-descriptions": {
+        "post-create-project-cmd": "Installs the backend (composer) and frontend (npm) halves after scaffolding."
+    }
+}

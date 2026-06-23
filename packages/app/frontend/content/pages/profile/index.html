@@ -1,0 +1,206 @@
+<layout name="base" title="Profile" />
+
+<div class="max-w-lg mx-auto space-y-10">
+    <h1 class="text-xl font-bold text-slate-700 uppercase tracking-wide">Profile</h1>
+
+    <div id="profile-content" data-requires-auth
+         hx-get="/api/profile" hx-trigger="auth-load, profile-refresh from:body, auth-refresh from:body"
+         hx-target="this" hx-select="unset" hx-swap="innerHTML"
+         handlebars-template="profile-template">
+    </div>
+</div>
+
+<!-- Profile content template -->
+<template id="profile-template">
+    <!-- Username -->
+    <section class="bg-white border border-slate-200 rounded-lg px-5 py-4">
+        <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Username</h2>
+        <div class="flex items-center justify-between">
+            <span class="text-slate-800 font-medium">{{#if data.username}}{{data.username}}{{else}}<span class="text-slate-400 italic">Not set</span>{{/if}}</span>
+            <button type="button" class="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
+                onclick="App.ui.openFormModal({ templateId: 'change-username-form-template', title: 'Change Username', size: 'sm', fields: { username: '{{data.username}}' } })">
+                {{#if data.username}}Change{{else}}Set Username{{/if}}
+            </button>
+        </div>
+    </section>
+
+    <!-- Email -->
+    <section class="bg-white border border-slate-200 rounded-lg px-5 py-4 mt-6">
+        <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Email</h2>
+        <div class="flex items-center justify-between">
+            <span class="text-slate-800">{{data.email}}</span>
+            <button type="button" class="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
+                onclick="App.ui.openFormModal({ templateId: 'change-email-form-template', title: 'Change Email', size: 'sm', fields: { email: '{{data.email}}' } })">
+                Change
+            </button>
+        </div>
+    </section>
+
+    <!-- Password -->
+    <section class="bg-white border border-slate-200 rounded-lg px-5 py-4 mt-6">
+        <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Password</h2>
+        <div class="flex items-center justify-between">
+            <span class="text-sm text-slate-600">Change your password</span>
+            <button type="button" class="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
+                onclick="App.ui.openFormModal({ templateId: 'change-password-form-template', title: 'Change Password', size: 'sm' })">
+                Change
+            </button>
+        </div>
+    </section>
+
+    <!-- Account Info -->
+    <section class="bg-white border border-slate-200 rounded-lg px-5 py-4 mt-6">
+        <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Account</h2>
+        <dl class="text-sm space-y-2">
+            <div class="flex justify-between">
+                <dt class="text-slate-500">Name</dt>
+                <dd class="text-slate-800">{{data.name}}</dd>
+            </div>
+            <div class="flex justify-between">
+                <dt class="text-slate-500">Member since</dt>
+                <dd class="text-slate-800">{{formatDateTime data.created_at}}</dd>
+            </div>
+        </dl>
+    </section>
+</template>
+
+<!-- Change Username Modal Form -->
+<template id="change-username-form-template">
+    <form
+        class="space-y-4"
+        method="patch"
+        action="/api/profile/username"
+        hx-ext="json-enc"
+        hx-patch="/api/profile/username"
+        hx-target="#global-toast-content"
+        hx-swap="innerHTML"
+        handlebars-template="global-toast-template"
+        hx-disabled-elt="button[type='submit']"
+        data-refresh-event="auth-refresh"
+        data-form-errors="inline"
+    >
+        <div class="form-field">
+            <label for="username" class="block text-sm font-medium">Username</label>
+            <input
+                name="username"
+                id="username"
+                type="text"
+                class="mt-1 border rounded px-3 py-2 w-full"
+                placeholder="Letters, numbers, and underscores"
+                autocomplete="off"
+                minlength="3"
+                maxlength="30"
+                pattern="^[a-zA-Z0-9_]+$"
+                required
+            />
+            <p class="mt-1 text-xs text-slate-400">3-30 characters. Letters, numbers, and underscores only.</p>
+            <div class="field-error-text hidden"></div>
+        </div>
+
+        {{> formButtons label="Save"}}
+    </form>
+</template>
+
+<!-- Change Email Modal Form -->
+<template id="change-email-form-template">
+    <form
+        class="space-y-4"
+        method="patch"
+        action="/api/profile/email"
+        hx-ext="json-enc"
+        hx-patch="/api/profile/email"
+        hx-target="#global-toast-content"
+        hx-swap="innerHTML"
+        handlebars-template="global-toast-template"
+        hx-disabled-elt="button[type='submit']"
+        data-refresh-event="profile-refresh"
+        data-form-errors="inline"
+    >
+        <div class="form-field">
+            <label for="email" class="block text-sm font-medium">New Email</label>
+            <input
+                name="email"
+                id="email"
+                type="email"
+                class="mt-1 border rounded px-3 py-2 w-full"
+                autocomplete="off"
+                required
+            />
+            <div class="field-error-text hidden"></div>
+        </div>
+
+        <div class="form-field">
+            <label for="current_password" class="block text-sm font-medium">Current Password</label>
+            <input
+                name="current_password"
+                id="current_password"
+                type="password"
+                class="mt-1 border rounded px-3 py-2 w-full"
+                autocomplete="current-password"
+                required
+            />
+            <div class="field-error-text hidden"></div>
+        </div>
+
+        {{> formButtons label="Save"}}
+    </form>
+</template>
+
+<!-- Change Password Modal Form -->
+<template id="change-password-form-template">
+    <form
+        class="space-y-4"
+        method="patch"
+        action="/api/profile/password"
+        hx-ext="json-enc"
+        hx-patch="/api/profile/password"
+        hx-target="#global-toast-content"
+        hx-swap="innerHTML"
+        handlebars-template="global-toast-template"
+        hx-disabled-elt="button[type='submit']"
+        data-form-errors="inline"
+    >
+        <div class="form-field">
+            <label for="current_password" class="block text-sm font-medium">Current Password</label>
+            <input
+                name="current_password"
+                id="current_password"
+                type="password"
+                class="mt-1 border rounded px-3 py-2 w-full"
+                autocomplete="current-password"
+                required
+            />
+            <div class="field-error-text hidden"></div>
+        </div>
+
+        <div class="form-field">
+            <label for="new_password" class="block text-sm font-medium">New Password</label>
+            <input
+                name="new_password"
+                id="new_password"
+                type="password"
+                class="mt-1 border rounded px-3 py-2 w-full"
+                autocomplete="new-password"
+                minlength="8"
+                required
+            />
+            <p class="mt-1 text-xs text-slate-400">Minimum 8 characters.</p>
+            <div class="field-error-text hidden"></div>
+        </div>
+
+        <div class="form-field">
+            <label for="new_password_confirmation" class="block text-sm font-medium">Confirm New Password</label>
+            <input
+                name="new_password_confirmation"
+                id="new_password_confirmation"
+                type="password"
+                class="mt-1 border rounded px-3 py-2 w-full"
+                autocomplete="new-password"
+                required
+            />
+            <div class="field-error-text hidden"></div>
+        </div>
+
+        {{> formButtons label="Change Password"}}
+    </form>
+</template>

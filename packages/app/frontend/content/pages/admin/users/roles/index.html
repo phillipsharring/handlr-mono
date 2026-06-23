@@ -1,0 +1,135 @@
+<layout name="admin" title="Roles" />
+
+<div class="space-y-6">
+    <div class="flex items-center gap-3">
+        <h1 class="text-2xl font-bold">Roles</h1>
+        <button
+            id="open-create-role-modal"
+            class="ml-auto border rounded px-3 py-2 hover:bg-slate-50"
+            type="button"
+        >
+            Create role
+        </button>
+    </div>
+    <div class="overflow-auto border rounded">
+        <table class="min-w-full text-sm table-fixed">
+            <thead class="bg-slate-300 text-slate-800 font-bold border-b">
+                <tr class="text-left">
+                    <th class="px-4 py-3 font-medium w-[10%]">ID</th>
+                    <th class="px-4 py-3 font-medium w-[25%]" data-sort="name">Name</th>
+                    <th class="px-4 py-3 font-medium w-[45%]">Permissions</th>
+                    <th class="px-4 py-3 font-medium w-[10%]">Created</th>
+                    <th class="px-4 py-3 font-medium w-[10%]">Action</th>
+                </tr>
+            </thead>
+            <component file="admin-list-tbody.html"
+                id="roles-tbody" url="/api/admin/roles" trigger="load, refresh"
+                template="roles-rows-template" colspan="5" class="divide-y"
+            >(Loading roles…)</component>
+        </table>
+    </div>
+
+    <template id="roles-rows-template">
+        {{#each data}}
+        <tr class="even:bg-slate-100 hover:bg-yellow-50">
+            <td class="px-4 py-3 align-top font-mono text-xs text-slate-600">{{id}}</td>
+            <td class="px-4 py-3 text-slate-900 align-top" hx-ext="ignore:client-side-templates">
+                <a
+                    href="/admin/users/roles/{{id}}/"
+                    class="hover:underline"
+                >{{name}}</a>
+            </td>
+            <td class="px-4 py-3 text-slate-600 align-top text-xs">{{permissions}}</td>
+            <td class="px-4 py-3 text-slate-600 align-top">
+                <span class="font-mono text-xs">{{formatDateTime created_at}}</span>
+            </td>
+            <td class="px-4 py-3 text-slate-700 align-top">
+                <button
+                    type="button"
+                    class="border rounded px-3 py-1.5 text-xs hover:bg-slate-50"
+                    data-action="open-edit-role-modal"
+                    data-role-id="{{id}}"
+                    data-role-name="{{name}}"
+                >
+                    edit
+                </button>
+            </td>
+        </tr>
+        {{else}}
+        <tr>
+            <td class="px-4 py-3 text-slate-500 align-top" colspan="5">(No roles found.)</td>
+        </tr>
+        {{/each}}
+    </template>
+
+    <template id="create-role-form-template">
+        <form
+            class="space-y-4"
+            method="post"
+            action="/api/admin/roles"
+            hx-ext="json-enc"
+            hx-post="/api/admin/roles"
+            hx-target="#global-toast-content"
+            hx-swap="innerHTML"
+            handlebars-template="global-toast-template"
+            hx-disabled-elt="button[type='submit']"
+            data-refresh-target="#roles-tbody"
+            data-form-errors="inline"
+        >
+            <div class="form-field">
+                <label for="create-role-name" class="block text-sm font-medium">Name</label>
+                <input
+                    name="name"
+                    id="create-role-name"
+                    class="mt-1 border rounded px-3 py-2 w-full"
+                    placeholder="e.g. moderator"
+                    autocomplete="off"
+                    required
+                />
+                <div class="field-error-text hidden"></div>
+            </div>
+
+            {{> formButtons label="Create"}}
+        </form>
+    </template>
+
+    <template src="_edit-role-form" id="edit-role-form-template"
+        refresh='data-refresh-target="#roles-tbody"'></template>
+</div>
+
+<script>
+function openCreateRoleModal() {
+    App.ui.openFormModal({
+        templateId: 'create-role-form-template',
+        title: 'Create role',
+    });
+}
+
+function openEditRoleModal(btn) {
+    App.ui.openFormModal({
+        templateId: 'edit-role-form-template',
+        title: 'Edit role',
+        formUrl: `/api/admin/roles/${btn.dataset.roleId}`,
+        formMethod: 'patch',
+        fields: {
+            name: btn.dataset.roleName,
+        },
+    });
+}
+
+function rolesClickHandler(e) {
+    const editBtn = e.target.closest('button[data-action="open-edit-role-modal"]');
+    if (editBtn) {
+        openEditRoleModal(editBtn);
+        return;
+    }
+
+    const createBtn = e.target.closest('#open-create-role-modal');
+    if (createBtn) {
+        openCreateRoleModal();
+    }
+}
+
+document.getElementById('open-create-role-modal').addEventListener('click', rolesClickHandler);
+document.getElementById('roles-tbody').addEventListener('click', rolesClickHandler);
+</script>

@@ -1,6 +1,6 @@
 {
-  "name": "phillipsharring/handlr-app",
-  "description": "App skeleton for Handlr, a lightweight PHP middleware framework",
+  "name": "phillipsharring/handlr-app-backend",
+  "description": "Backend half of the Handlr app skeleton (PHP Pipe + Handler)",
   "type": "project",
   "keywords": [ "framework", "handlr" ],
   "homepage": "https://github.com/phillipsharring/handlr-mono/tree/main/packages/app",

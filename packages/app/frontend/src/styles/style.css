@@ -1,0 +1,16 @@
+@import 'tailwindcss';
+@plugin "@tailwindcss/typography";
+
+@source "../../content/**/*.html";
+@source "../**/*.js";
+
+/* Scan framework JS for Tailwind classes (toast colors, etc.) */
+@source "../../node_modules/@phillipsharring/handlr-frontend/src/**/*.js";
+
+/* Scan all frontend modules for Tailwind classes — applies to every module
+   under modules/, regardless of whether it's enabled in site.config.modules.
+   The cost of scanning a disabled module is one extra glob walk; the cost of
+   forgetting to scan an enabled one is missing classes in production. */
+@source "../../modules/**/*.{js,html}";
+
+@import '@phillipsharring/handlr-frontend/styles/base.css';

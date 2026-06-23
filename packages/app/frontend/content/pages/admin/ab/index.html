@@ -1,0 +1,82 @@
+<layout name="admin" title="A/B Tests" />
+
+<div class="max-w-4xl mx-auto">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-xl font-bold text-slate-700 uppercase tracking-wide">A/B Tests</h1>
+        <button type="button" class="rounded px-3 py-1.5 bg-slate-800 text-white text-sm hover:bg-slate-700" id="create-ab-test-btn">New Test</button>
+    </div>
+
+    <div
+        id="ab-tests-list"
+        data-requires-auth
+        hx-get="/api/admin/ab"
+        hx-trigger="auth-load, refresh"
+        hx-target="this"
+        hx-select="unset"
+        hx-swap="innerHTML"
+        handlebars-array-template="ab-tests-template"
+    ></div>
+</div>
+
+<template id="ab-tests-template">
+    {{#each data}}
+    <div class="border rounded-lg p-4 mb-3 hover:bg-slate-50 transition-colors">
+        <div class="flex items-center gap-3">
+            <div class="flex-1">
+                <h3 class="font-medium text-slate-900">{{name}}</h3>
+                <p class="text-xs text-slate-400 mt-0.5">{{formatDateTime created_at}}</p>
+            </div>
+            <span class="text-sm text-slate-500 tabular-nums">{{unique_visitors}} visitors</span>
+            <span class="text-sm text-slate-500 tabular-nums">{{total_events}} events</span>
+            {{#eq status "active"}}
+            <span class="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-medium">Active</span>
+            {{/eq}}
+            {{#eq status "paused"}}
+            <span class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded font-medium">Paused</span>
+            {{/eq}}
+            {{#eq status "completed"}}
+            <span class="text-xs bg-slate-200 text-slate-600 px-2 py-0.5 rounded font-medium">Completed</span>
+            {{/eq}}
+            <a href="/admin/ab/{{id}}/" class="text-xs border rounded px-2 py-1 text-slate-500 hover:text-slate-700 hover:bg-slate-100 no-underline">Results</a>
+        </div>
+    </div>
+    {{/each}}
+</template>
+
+<template id="create-ab-test-template">
+    <form
+        method="post"
+        action="/api/admin/ab"
+        hx-ext="json-enc"
+        hx-post="/api/admin/ab"
+        hx-target="#global-toast-content"
+        hx-swap="innerHTML"
+        handlebars-template="global-toast-template"
+        data-form-errors="inline"
+        data-refresh-target="#ab-tests-list"
+    >
+        <div class="space-y-4">
+            <div class="form-field">
+                <label for="ab-test-name" class="block text-sm font-medium">Test Name</label>
+                <input type="text" name="name" id="ab-test-name" class="mt-1 border rounded px-3 py-2 w-full" placeholder="landing-headline" required />
+                <p class="mt-1 text-xs text-slate-400">Lowercase, hyphenated. Used in templates.</p>
+                <div class="field-error-text hidden"></div>
+            </div>
+        </div>
+        {{> formButtons label="Create"}}
+    </form>
+</template>
+
+<script>
+window.onReady(function() {
+    var btn = document.getElementById('create-ab-test-btn');
+    if (btn) {
+        btn.addEventListener('click', function() {
+            App.ui.openFormModal({
+                templateId: 'create-ab-test-template',
+                title: 'New A/B Test',
+            });
+        });
+    }
+});
+</script>
