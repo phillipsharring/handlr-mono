@@ -10,11 +10,15 @@ composer create-project phillipsharring/handlr-app my-app
 
 A `post-create-project-cmd` runs `npm install` in the frontend half, so a single command sets up both sides. Then:
 
+The app ships as two halves — `backend/` (composer) and `frontend/` (npm) — so each dev server runs in its own directory:
+
 ```bash
 cd my-app
-composer run dev      # PHP server on http://localhost:8000
-npm run dev           # Vite dev server on http://localhost:5173 (proxies /api to :8000)
+composer --working-dir=backend run dev   # PHP server on http://localhost:8000
+npm --prefix frontend run dev            # Vite dev server on http://localhost:5173 (proxies /api to :8000)
 ```
+
+(Or `cd backend && composer run dev` / `cd frontend && npm run dev` in separate terminals.)
 
 ## What's inside
 
