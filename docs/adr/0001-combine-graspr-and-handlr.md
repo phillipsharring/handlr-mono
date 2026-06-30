@@ -1,9 +1,20 @@
 # ADR 0001 — Combine graspr (FE) and handlr (BE) into one co-versioned framework
 
-- **Status:** Accepted (D1/D2 resolved 2026-06-21)
+- **Status:** Accepted (D1/D2 resolved 2026-06-21); **Implemented (all 8 rollout steps done, 2026-06-30)**
 - **Date:** 2026-06-21
 - **Deciders:** Phillip Harrington
 - **Supersedes / relates to:** `BACKLOG.md` "Combine graspr + handlr into one framework (the big move)" (items 1–4, 7)
+
+---
+
+## As-built notes (2026-06-30)
+
+The rollout is complete. Two names drifted from the plan during implementation:
+
+- **`packages/site` → `packages/static`**, published as **`@phillipsharring/create-handlr-static`** (not `create-handlr-site`). The repo also lives at **`~/Sites/handlr-mono`**, not `~/Sites/handlr` (the latter remains the pre-mono container of the old per-package repos, pending cleanup).
+- **`packages/skeleton` → `packages/app`**, published as `phillipsharring/handlr-app` (composer) — the name matches the plan; only the directory differs.
+
+Also added post-ADR: a **`module:install`** command (`packages/backend/scripts/module.php`, wired into the app skeleton's `composer.json`) that installs both halves of a dual-published module at the matching version — the ergonomic payoff of the D4 module contract. Shipped in the 0.9.0 lockstep release.
 
 ---
 
