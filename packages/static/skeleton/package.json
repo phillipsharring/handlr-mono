@@ -11,7 +11,7 @@
     },
     "author": "",
     "devDependencies": {
-        "@phillipsharring/handlr-build": "^0.7.0",
+        "@phillipsharring/handlr-build": "^0.9.0",
         "@tailwindcss/vite": "^4.1.18",
         "tailwindcss": "^4.1.18",
         "vite": "^7.3.0"
