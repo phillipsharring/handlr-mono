@@ -18,7 +18,15 @@ Plan:
   same way it references `migrate`, `seed`, etc. (delegating to the framework script).
 - Keep the README line as-is until then (it documents the intended UX).
 
-Status: not started. README line intentionally left in place.
+Status: DONE (2026-06-29). Implemented as `packages/backend/scripts/module.php`
+(Symfony Console single-command, mirrors `migrate.php`). Installs the composer half,
+reads the resolved version back from `composer.lock`, then npm-installs the frontend
+half pinned to that exact version (so an app on an older module version still gets a
+matching frontend). Does NOT register the provider or run migrations  - prints those as
+next steps by design. Wired in `packages/app/backend/composer.json` as `module:install`
+(usage: `composer run module:install -- <name>`). Ships in the next handlr release;
+the published 0.8.0 backend predates the script, so the first real install (re-adding a
+module to an app) is the verification canary.
 
 ## ADR 0001 — as-built naming drift (minor)
 

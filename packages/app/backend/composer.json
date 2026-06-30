@@ -20,6 +20,7 @@
     "dump-seeds": "php scripts/dump-seeds.php",
     "fresh": "composer run migrate:fresh && composer run seed:fresh",
     "export-fixtures": "php scripts/export-fixtures.php",
+    "module:install": "php ./vendor/phillipsharring/handlr-backend/scripts/module.php",
     "make:migration": "php ./vendor/phillipsharring/handlr-backend/scripts/make.php make:migration",
     "make:seed": "php ./vendor/phillipsharring/handlr-backend/scripts/make.php make:seeder",
     "make:record": "php ./vendor/phillipsharring/handlr-backend/scripts/make.php make:record",
@@ -40,7 +41,7 @@
     "psr/log": "^3.0",
     "vlucas/phpdotenv": "^5.6",
     "ramsey/uuid": "^4.7",
-    "phillipsharring/handlr-backend": "^0.8",
+    "phillipsharring/handlr-backend": "^0.9",
     "symfony/console": "^7.0"
   },
   "require-dev": {
