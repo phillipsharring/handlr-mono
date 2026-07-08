@@ -31,21 +31,11 @@ use App\Auth\PasswordReset\PostForgotPassword;
 use App\Auth\PasswordReset\PostResetPassword;
 use App\Auth\RememberMePipe;
 use App\Auth\Signup\PostSignup;
-use App\Examples\EchoPipe;
-use App\Examples\ExampleDetailPipe;
-use App\Examples\ExamplesServiceProvider;
-use App\Examples\FieldErrorsPipe;
-use App\Examples\HelloPipe;
-use App\Examples\InvariantErrorPipe;
-use App\Examples\SuccessPipe;
-use App\Examples\ToastPipe;
 use App\Profile\GetProfilePipe;
 use App\Profile\PatchUpdateEmail;
 use App\Profile\PatchUpdatePassword;
 use App\Profile\PatchUpdateUsername;
 use App\Profile\ProfileServiceProvider;
-use Handlr\Ab\Pipes\CaptureAbEvent;
-use Handlr\Ab\Pipes\GetAbAssignments;
 use Handlr\Auth\Pipes\RequireAuthPipe;
 use Handlr\Auth\Pipes\SessionAuthPipe;
 use Handlr\Auth\Pipes\StartSessionPipe;
@@ -152,15 +142,6 @@ beforeAll(function () {
 
 const EXPECTED_API_ROUTES = [
     // [method, path, pipe-stack, owning origin]
-    ['GET',   '/api/ab/assignments',           [...STACK_SESSION_ONLY, GetAbAssignments::class],       'app'],
-    ['POST',  '/api/ab/capture',               [...STACK_SESSION_ONLY, CaptureAbEvent::class],         'app'],
-    ['GET',   '/api/examples/hello',           [...STACK_BASIC, HelloPipe::class],              ExamplesServiceProvider::class],
-    ['POST',  '/api/examples/echo',            [...STACK_BASIC, EchoPipe::class],               ExamplesServiceProvider::class],
-    ['GET',   '/api/examples/toast',           [...STACK_BASIC, ToastPipe::class],              ExamplesServiceProvider::class],
-    ['GET',   '/api/examples/detail',          [...STACK_BASIC, ExampleDetailPipe::class],      ExamplesServiceProvider::class],
-    ['POST',  '/api/examples/field-errors',    [...STACK_BASIC, FieldErrorsPipe::class],        ExamplesServiceProvider::class],
-    ['POST',  '/api/examples/invariant-error', [...STACK_BASIC, InvariantErrorPipe::class],     ExamplesServiceProvider::class],
-    ['POST',  '/api/examples/success',         [...STACK_BASIC, SuccessPipe::class],            ExamplesServiceProvider::class],
     ['GET',   '/api/auth/me',                  [...STACK_SESSION_FULL, GetAuthStatus::class],          AuthServiceProvider::class],
     ['POST',  '/api/auth/login',               [...STACK_SESSION_FULL, PostLoginAttempt::class],      AuthServiceProvider::class],
     ['POST',  '/api/auth/signup',              [...STACK_SESSION_FULL, PostSignup::class],            AuthServiceProvider::class],

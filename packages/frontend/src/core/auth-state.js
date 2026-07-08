@@ -68,9 +68,14 @@ function applyAuthState(authData) {
     // even if multiple afterSwap/afterSettle handlers call applyAuthState while
     // requests are still in flight. New elements (e.g. after boosted nav swaps
     // #app) won't be in the set and will be triggered normally.
+    //
+    // Fire-once is driven solely by the WeakSet — NOT by whether the element is
+    // empty. Gating on `!el.children.length` meant a data-requires-auth widget
+    // that ships with placeholder/scaffold content never fired auth-load, so it
+    // never loaded its authed content (the bug paper-doll hit).
     if (authenticated && typeof htmx?.trigger === 'function') {
         document.querySelectorAll('[data-requires-auth]').forEach(el => {
-            if (!el.children.length && !authPending.has(el)) {
+            if (!authPending.has(el)) {
                 authPending.add(el);
                 htmx.trigger(el, 'auth-load');
             }

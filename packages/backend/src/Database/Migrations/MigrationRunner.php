@@ -252,7 +252,7 @@ class MigrationRunner
         // "20251227121500_create_users_table.php" -> "CreateUsersTable"
         $base = basename($file, '.php'); // 20251227121500_create_users_table
         [$stamp, $rest] = [substr($base, 0, 14), substr($base, 15)];
-        $studly = str_replace(' ', '', ucwords(str_replace('_', '', $rest)));
+        $studly = str_replace(' ', '', ucwords(str_replace('_', ' ', $rest)));
         return "Migration_{$stamp}_{$studly}";
     }
 

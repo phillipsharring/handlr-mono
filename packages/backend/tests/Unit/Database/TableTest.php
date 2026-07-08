@@ -26,9 +26,7 @@ it('findById converts UUID, queries DB, and rehydrates record', function () {
     $db->expects($this->once())
         ->method('execute')
         ->with(
-            // 'SELECT * FROM `test_table` WHERE id = ?',
-            // 'SELECT * FROM `test_table` WHERE id = ?',
-            $this->stringContains('FROM `test_table` WHERE id = ?'),
+            $this->stringContains('FROM `test_table` WHERE `id` = ?'),
             [$bin]
         )
         ->willReturn($stmt);

@@ -14,12 +14,15 @@
         "php": ">=8.4"
     },
     "scripts": {
+        "check": "php scripts/check.php",
         "post-create-project-cmd": [
             "@composer install --working-dir=backend --no-interaction",
-            "npm --prefix frontend install"
+            "npm --prefix frontend install",
+            "@check"
         ]
     },
     "scripts-descriptions": {
-        "post-create-project-cmd": "Installs the backend (composer) and frontend (npm) halves after scaffolding."
+        "check": "Structural check of the generated app (migration names, duplicate routes, module refs). Run any time; also runs once after create-project.",
+        "post-create-project-cmd": "Installs the backend (composer) and frontend (npm) halves after scaffolding, then runs the structural check."
     }
 }
