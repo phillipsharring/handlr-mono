@@ -1,0 +1,4 @@
+# Local modules live here.
+# Each subdir with a module.js is auto-discovered by src/app.js (runtime)
+# and by @source in styles for Tailwind. Add its name to site.config.js `modules`
+# to enable its build-time pages/components.

@@ -77,8 +77,6 @@ class TestRecord extends Record
         'age' => 'int',
         'active' => 'bool',
     ];
-
-    public string $name;
 }
 
 class NonUuidRecord extends Record

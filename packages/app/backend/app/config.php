@@ -38,7 +38,6 @@ return [
         'providers' => [
             App\Auth\AuthServiceProvider::class,
             App\Profile\ProfileServiceProvider::class,
-            App\Examples\ExamplesServiceProvider::class,
         ],
     ],
     'mail' => [

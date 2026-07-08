@@ -24,16 +24,19 @@
  *                   auth requirement (login, signup, password reset, etc.).
  *   - api.authed  → api.session + RequireAuth
  *                   For authenticated routes (profile, resend-verification).
+ *   - api.admin   → api.authed + `/admin` prefix + RequirePermission('admin.access')
+ *                   For admin-gated routes. Modules attach their admin CRUD
+ *                   here via intoJunction('api.admin').
  *
- * Only routes that don't belong to a domain (e.g. the root view-pipe, or
- * framework-provided ones like A/B testing) live in this file directly.
+ * Only routes that don't belong to a domain (e.g. the root view-pipe) live
+ * in this file directly. Everything else — including optional modules like
+ * A/B testing — attaches to a junction from its own ServiceProvider.
  */
 
-use Handlr\Ab\Pipes\CaptureAbEvent;
-use Handlr\Ab\Pipes\GetAbAssignments;
 use App\Auth\CheckBlockedPipe;
 use App\Auth\RememberMePipe;
 use Handlr\Auth\Pipes\RequireAuthPipe;
+use Handlr\Auth\Pipes\RequirePermissionPipe;
 use Handlr\Auth\Pipes\SessionAuthPipe;
 use Handlr\Auth\Pipes\StartSessionPipe;
 use Handlr\Core\Routes\Router;
@@ -57,11 +60,10 @@ $router->group('/api', [CorsPipe::class, VerifyOriginPipe::class])
     ->junction('api.basic')
 
     // ── Session-only (no auth, no CSRF) ──
-    // Junction: api.public
+    // Junction: api.public — for session-only public endpoints. Providers
+    // attach here (e.g. the A/B module's assignment/capture routes).
     ->through([StartSessionPipe::class])
         ->junction('api.public')
-        ->get('/ab/assignments', [GetAbAssignments::class])
-        ->post('/ab/capture', [CaptureAbEvent::class])
     ->end()
 
     // ── Full session + CSRF (no auth required) ──
@@ -80,6 +82,17 @@ $router->group('/api', [CorsPipe::class, VerifyOriginPipe::class])
         // Junction: api.authed — providers attach profile/etc. here.
         ->through([RequireAuthPipe::class])
             ->junction('api.authed')
+
+            // ── Admin-gated routes ──
+            // Junction: api.admin — api.authed + `/admin` prefix +
+            // RequirePermissionPipe('admin.access'). Modules (e.g. the A/B
+            // module's test CRUD) attach here via intoJunction('api.admin')
+            // and inherit the admin gate — they stay permission-agnostic.
+            // RequirePermissionPipe takes string|array (ANY-of), so an app
+            // that needs a richer scheme can widen the gate here.
+            ->group('/admin', [new RequirePermissionPipe('admin.access')])
+                ->junction('api.admin')
+            ->end() // /admin
         ->end()
 
     ->end()
