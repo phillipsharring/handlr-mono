@@ -1,6 +1,6 @@
 {
     "name": "@phillipsharring/handlr-build",
-    "version": "0.10.1",
+    "version": "0.10.2",
     "description": "Build mechanics for Handlr sites: HTML compiler, page baker, Vite dev plugin",
     "type": "module",
     "exports": {
