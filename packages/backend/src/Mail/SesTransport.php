@@ -39,6 +39,14 @@ class SesTransport implements MailTransportInterface
         private string $region,
         private LoggerInterface $logger,
     ) {
+        if (!class_exists(SesClient::class)) {
+            throw new \RuntimeException(
+                'The "ses" mail transport requires the aws/aws-sdk-php package, which is not installed. '
+                . 'Install it with: composer require aws/aws-sdk-php '
+                . '(or set MAIL_TRANSPORT=smtp / MAIL_TRANSPORT=log to use a transport with no extra dependency).'
+            );
+        }
+
         $this->client = new SesClient([
             'version' => 'latest',
             'region' => $this->region,
