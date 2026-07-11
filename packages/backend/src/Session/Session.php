@@ -74,12 +74,15 @@ use SessionHandlerInterface;
  * ```php
  * class LogoutHandler implements Handler
  * {
- *     public function __construct(private SessionInterface $session) {}
+ *     public function __construct(
+ *         private SessionInterface $session,
+ *         private HandlerResult $result
+ *     ) {}
  *
  *     public function handle(array|HandlerInput $input): ?HandlerResult
  *     {
  *         $this->session->destroy();
- *         return HandlerResult::ok(['message' => 'Logged out']);
+ *         return $this->result->ok(['message' => 'Logged out']);
  *     }
  * }
  * ```

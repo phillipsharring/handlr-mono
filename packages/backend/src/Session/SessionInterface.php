@@ -56,7 +56,10 @@ namespace Handlr\Session;
  * ```php
  * class LoginHandler implements Handler
  * {
- *     public function __construct(private SessionInterface $session) {}
+ *     public function __construct(
+ *         private SessionInterface $session,
+ *         private HandlerResult $result
+ *     ) {}
  *
  *     public function handle(array|HandlerInput $input): ?HandlerResult
  *     {
@@ -65,7 +68,7 @@ namespace Handlr\Session;
  *         $this->session->set('user_id', $user->id);
  *         $this->session->set('logged_in_at', time());
  *
- *         return HandlerResult::ok(['message' => 'Logged in']);
+ *         return $this->result->ok(['message' => 'Logged in']);
  *     }
  * }
  * ```

@@ -18,7 +18,8 @@ namespace Handlr\Handlers;
  * {
  *     public function __construct(
  *         private UsersTable $users,
- *         private Mailer $mailer
+ *         private Mailer $mailer,
+ *         private HandlerResult $result
  *     ) {}
  *
  *     public function handle(array|HandlerInput $input): ?HandlerResult
@@ -32,7 +33,7 @@ namespace Handlr\Handlers;
  *         $this->users->insert($user);
  *         $this->mailer->sendWelcome($user);
  *
- *         return HandlerResult::ok(['user' => $user->toArray()]);
+ *         return $this->result->ok(['user' => $user->toArray()]);
  *     }
  * }
  * ```

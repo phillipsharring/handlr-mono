@@ -10,17 +10,22 @@ namespace Handlr\Handlers;
  * Provides a consistent structure for handler responses with success/failure
  * status, data payload, error messages, and optional metadata.
  *
+ * `ok()` and `fail()` are instance methods — the framework holds no static
+ * state. Inject a HandlerResult into your handler (`private HandlerResult
+ * $result`) and call `$this->result->ok(...)`. The examples below use an
+ * injected `$result` for brevity.
+ *
  * ## Creating success results
  *
  * ```php
  * // Simple success
- * return HandlerResult::ok();
+ * return $result->ok();
  *
  * // Success with data
- * return HandlerResult::ok(['user' => $user->toArray()]);
+ * return $result->ok(['user' => $user->toArray()]);
  *
  * // Success with data and metadata
- * return HandlerResult::ok(
+ * return $result->ok(
  *     ['users' => $users],
  *     ['total' => 100, 'page' => 1]
  * );
@@ -30,16 +35,16 @@ namespace Handlr\Handlers;
  *
  * ```php
  * // Simple failure with error messages
- * return HandlerResult::fail(['User not found']);
+ * return $result->fail(['User not found']);
  *
  * // Failure with field-specific errors
- * return HandlerResult::fail([
+ * return $result->fail([
  *     'email' => 'Email is already taken',
  *     'username' => 'Username must be alphanumeric',
  * ]);
  *
  * // Failure with metadata (e.g., error codes)
- * return HandlerResult::fail(
+ * return $result->fail(
  *     ['Payment declined'],
  *     ['code' => 'CARD_DECLINED', 'retry' => true]
  * );
@@ -71,7 +76,7 @@ namespace Handlr\Handlers;
  * ## Accessing metadata
  *
  * ```php
- * $result = HandlerResult::ok($data, ['cached' => true, 'ttl' => 3600]);
+ * $result = $this->result->ok($data, ['cached' => true, 'ttl' => 3600]);
  *
  * if ($result->meta['cached'] ?? false) {
  *     // Result was from cache
@@ -97,8 +102,8 @@ class HandlerResult
      * Create a successful result.
      *
      * ```php
-     * return HandlerResult::ok(['user' => $user]);
-     * return HandlerResult::ok($data, ['page' => 1, 'total' => 50]);
+     * return $this->result->ok(['user' => $user]);
+     * return $this->result->ok($data, ['page' => 1, 'total' => 50]);
      * ```
      *
      * @param mixed $data Payload data
@@ -113,9 +118,9 @@ class HandlerResult
      * Create a failure result.
      *
      * ```php
-     * return HandlerResult::fail(['User not found']);
-     * return HandlerResult::fail(['email' => 'Invalid email format']);
-     * return HandlerResult::fail(['Payment failed'], ['code' => 'INSUFFICIENT_FUNDS']);
+     * return $this->result->fail(['User not found']);
+     * return $this->result->fail(['email' => 'Invalid email format']);
+     * return $this->result->fail(['Payment failed'], ['code' => 'INSUFFICIENT_FUNDS']);
      * ```
      *
      * @param array $errors Error messages (may be keyed by field name)
