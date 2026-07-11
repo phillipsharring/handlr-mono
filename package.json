@@ -1,5 +1,10 @@
 {
   "name": "@phillipsharring/handlr-monorepo",
   "private": true,
-  "workspaces": ["packages/*"]
+  "workspaces": ["packages/*", "docs"],
+  "scripts": {
+    "docs:dev": "npm run dev -w docs",
+    "docs:build": "npm run build -w docs",
+    "docs:preview": "npm run preview -w docs"
+  }
 }
