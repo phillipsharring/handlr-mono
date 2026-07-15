@@ -10,10 +10,16 @@ export default defineConfig({
   cleanUrls: true,
   lastUpdated: true,
 
+  head: [['link', { rel: 'icon', type: 'image/png', href: '/handlr.png' }]],
+
   // Keep internal ops notes out of the published site.
   srcExclude: ['BACKLOG.md', '**/README.md'],
 
   themeConfig: {
+    // Wordmark already reads "HANDLR" — show the logo, drop the duplicate text.
+    logo: '/handlr.png',
+    siteTitle: false,
+
     search: { provider: 'local' },
 
     nav: [
