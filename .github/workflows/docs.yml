@@ -28,7 +28,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       - name: Install dependencies
@@ -38,6 +38,11 @@ jobs:
         run: npm run docs:build
 
       - uses: actions/configure-pages@v5
+        with:
+          # Create the Pages site on first run instead of failing if it
+          # doesn't exist yet. (Still set Settings → Pages → Source:
+          # GitHub Actions once, so future pushes deploy.)
+          enablement: true
 
       - uses: actions/upload-pages-artifact@v3
         with:
