@@ -4,6 +4,8 @@ A co-versioned framework for building server-driven web apps and static sites: *
 
 This is a monorepo. Each package below is published independently to its registry (npm or Packagist); the backend and app skeleton are mirrored to read-only split repos that Packagist tracks.
 
+📖 **Documentation:** https://phillipsharring.github.io/handlr-mono/
+
 ## Packages
 
 | Package | Dir | Registry | Role |

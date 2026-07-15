@@ -6,6 +6,8 @@ Build mechanics for [Handlr](https://github.com/phillipsharring/handlr-mono) sit
 
 This package contains everything needed to **build** a Handlr site, separate from the runtime concerns (HTMX, Handlebars, auth) that live in [`@phillipsharring/handlr-frontend`](https://github.com/phillipsharring/handlr-mono/tree/main/packages/frontend). Static sites can depend on `handlr-build` alone; full apps depend on both.
 
+📖 **Documentation:** https://phillipsharring.github.io/handlr-mono/frontend/build
+
 ## Install
 
 ```bash

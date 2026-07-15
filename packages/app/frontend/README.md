@@ -2,6 +2,8 @@
 
 The frontend half of a Handlr app, built on [Handlr Frontend](https://github.com/phillipsharring/handlr-mono/tree/main/packages/frontend)  - an HTMX + Handlebars + Tailwind CSS runtime. Scaffolded as part of `composer create-project phillipsharring/handlr-app`.
 
+📖 **Documentation:** https://phillipsharring.github.io/handlr-mono/frontend/
+
 ## Getting Started
 
 From the project root (the `composer create-project` post-install step runs `npm install` for you; run it manually if needed):

@@ -73,6 +73,7 @@ export default defineConfig({
         items: [
           { text: 'Writing a Module', link: '/modules/' },
           { text: 'Landing (email capture)', link: '/modules/landing' },
+          { text: 'A/B Testing', link: '/modules/ab' },
         ],
       },
     ],

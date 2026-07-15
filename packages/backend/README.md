@@ -4,6 +4,8 @@
 
 A lightweight PHP middleware-style framework built around the **Pipe + Handler** pattern.
 
+📖 **Documentation:** https://phillipsharring.github.io/handlr-mono/backend/
+
 ## Installation
 
 ```bash

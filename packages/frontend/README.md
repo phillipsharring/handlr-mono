@@ -8,6 +8,8 @@ The frontend runtime for building server-driven web applications with **HTMX + H
 
 It is the runtime companion to [`@phillipsharring/handlr-build`](https://github.com/phillipsharring/handlr-mono/tree/main/packages/build) (build tooling) and [`phillipsharring/handlr-backend`](https://github.com/phillipsharring/handlr-mono/tree/main/packages/backend) (the PHP backend).
 
+📖 **Documentation:** https://phillipsharring.github.io/handlr-mono/frontend/
+
 ## Installation
 
 ```bash

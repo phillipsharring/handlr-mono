@@ -4,6 +4,8 @@ A static site built with [`@phillipsharring/handlr-build`](https://github.com/ph
 
 For a full app with HTMX, auth, modals, and toasts, scaffold `composer create-project phillipsharring/handlr-app` instead.
 
+📖 **Documentation:** https://phillipsharring.github.io/handlr-mono/frontend/build
+
 ## Getting Started
 
 ```bash
