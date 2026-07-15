@@ -1,11 +1,12 @@
 import { defineConfig } from 'vitepress'
 
-// Project pages live at https://phillipsharring.github.io/handlr-mono/
-// Switch `base` to '/' if you move to a custom domain (add a CNAME file).
+// Served from the custom domain https://handlr.dev/ (see docs/public/CNAME).
+// If you ever revert to GitHub Pages project pages, set `base` back to
+// '/handlr-mono/' and remove the CNAME.
 export default defineConfig({
   title: 'Handlr',
   description: 'A lightweight PHP Pipe + Handler framework and its HTMX frontend toolkit.',
-  base: '/handlr-mono/',
+  base: '/',
   cleanUrls: true,
   lastUpdated: true,
 
