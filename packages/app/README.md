@@ -2,6 +2,8 @@
 
 A full-stack Handlr app skeleton  - the starting point for a server-driven web app built on **HTMX + Handlebars + Tailwind** on the front end and a **PHP Pipe + Handler** framework on the back end.
 
+📖 **Documentation:** https://phillipsharring.github.io/handlr-mono/getting-started/installation
+
 Scaffold a new project with one command:
 
 ```bash

@@ -2,6 +2,8 @@
 
 The backend half of a Handlr app, built on [Handlr Backend](https://github.com/phillipsharring/handlr-mono/tree/main/packages/backend), a lightweight PHP middleware-style framework.
 
+📖 **Documentation:** https://phillipsharring.github.io/handlr-mono/backend/
+
 ## Installation
 
 ```bash
