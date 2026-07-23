@@ -74,3 +74,22 @@ export { debounce, scrubSearchInput } from './helpers/debounce.js';
 
 // Lifecycle hooks
 export { onAfterSwap, onAfterSettle, onPageLoad, onHistoryRestore } from './hooks.js';
+
+// Declarative behavior layer (ADR 0003)
+// Delegation primitives + escape hatches
+export { onEvent, onClick, onHtmx } from './core/delegation.js';
+// Named action registry (data-action / data-toggle)
+export {
+    registerAction,
+    onAction,
+    getAction,
+    hasAction,
+    runAction,
+    initActions,
+} from './core/actions.js';
+// Form-response branching (data-on-success / data-on-error)
+export {
+    onFormSuccess,
+    onFormError,
+    initFormResponses,
+} from './core/form-response.js';
