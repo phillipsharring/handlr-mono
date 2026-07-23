@@ -93,6 +93,9 @@ class Container implements ContainerInterface
     /** @var array<string, bool> Currently resolving classes (for circular dependency detection) */
     private array $resolving = [];
 
+    /** @var ContainerInterface|null Parent container when this is a request scope (see scope()). */
+    private ?ContainerInterface $parent = null;
+
     /**
      * Bind an abstract class or interface to a concrete implementation.
      *
@@ -324,6 +327,20 @@ class Container implements ContainerInterface
             // Check if there's a factory and return it's result
             if (isset($this->factories[$abstract])) {
                 return ($this->factories[$abstract])();
+            }
+
+            // Not registered locally. If this is a request scope and the parent
+            // holds an explicit registration, let the parent resolve it — shared
+            // services live on the root; only request-scoped instances live here.
+            // Autowireable classes (no explicit registration anywhere) are NOT
+            // delegated: the child must build them so their dependencies resolve
+            // through the child and can pick up scope-bound instances.
+            if (
+                $this->parent !== null
+                && !isset($this->bindings[$abstract])
+                && $this->parent->has($abstract)
+            ) {
+                return $this->parent->get($abstract);
             }
 
             // Check for a string instance -> string classname binding
@@ -628,10 +645,23 @@ class Container implements ContainerInterface
     {
         $abstract = $this->aliases[$alias] ?? $alias;
 
-        return isset($this->bindings[$abstract])
+        $local = isset($this->bindings[$abstract])
             || isset($this->singletons[$abstract])
             || isset($this->factories[$abstract])
             || isset($this->aliases[$alias]);
+
+        return $local || ($this->parent?->has($alias) ?? false);
+    }
+
+    /**
+     * Open a request-lifetime child container. See ContainerInterface::scope().
+     */
+    public function scope(): ContainerInterface
+    {
+        $child = new self();
+        $child->parent = $this;
+
+        return $child;
     }
 
     /**
