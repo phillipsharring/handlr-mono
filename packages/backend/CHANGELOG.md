@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+### Changed
+
+- **UUID binary↔string conversion is centralized in `Table`.** `Record` is now a
+  plain data holder: its constructor stores data verbatim and no longer decodes
+  `$uuidColumns`, which duplicated what `Table` already does (the encode/write
+  path was Table-only). All `Table` fetches decode via the shared `hydrateRow()`
+  path — including `findById()`, which previously hand-rolled hydration and
+  decoded only the primary key.
+  - New: **`Table::hydrate(array $row): Record`** — the sanctioned way to build a
+    record from a raw custom-query row (decodes pk + `$uuidColumns`).
+  - **BREAKING:** `new SomeRecord($rawDatabaseRow)` no longer decodes binary UUID
+    columns; route raw rows through `Table::hydrate()` (or a `find*`), otherwise
+    `$record->user_id` returns the raw `BINARY(16)` value.
+
+  Note: this was a layering cleanup, not a bug fix — the old `Record`-ctor decode
+  plus an idempotent `binToUuid` meant records already exposed string UUID columns.
+
+## 0.13.1
+
 ### Added
 
 - **Fluent route policy binding** — `->resolves(RecordClass)` and `->policy(Action)`
