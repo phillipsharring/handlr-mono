@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Handlr\Core\Routes;
 
+use Handlr\Policies\PolicyAction;
 use Handlr\Resolution\Resolves;
 
 /**
@@ -230,6 +231,32 @@ final class RouteGroup
     public function delete(string $path, array $pipes, ?Resolves $resolve = null): self
     {
         $this->router->delete($this->joinPaths($this->prefix, $path), array_merge($this->pipes, $pipes), $resolve);
+        return $this;
+    }
+
+    /**
+     * Declare that the most recently registered route resolves a record.
+     * Fluent alternative to a Resolves spec; chain policy() to also authorize.
+     *
+     * @param class-string $record The record type to resolve and bind.
+     * @param string       $param  Route param holding the id (default 'id').
+     * @return self Fluent interface — continue declaring routes in this group.
+     */
+    public function resolves(string $record, string $param = 'id'): self
+    {
+        $this->router->resolves($record, $param);
+        return $this;
+    }
+
+    /**
+     * Declare the policy action to consult for the most recently registered
+     * route. Must follow resolves().
+     *
+     * @return self Fluent interface.
+     */
+    public function policy(PolicyAction $action): self
+    {
+        $this->router->policy($action);
         return $this;
     }
 
