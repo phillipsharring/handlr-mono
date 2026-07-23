@@ -171,6 +171,20 @@ refactor," rather than adding to the existing self-registering-`core/*` debt.
   `addEventListener` scripts in the skeleton's auth pages, layouts, and components
   with the attributes / named exports. This is the skeleton only — the shipped
   starter every new app is cloned from.
+- **Pass 4 — first-party modules (`~/Sites/handlr/modules/{ab,landing}`).** Both
+  first-party modules already consume the pattern this ADR replaces and must be
+  updated in lockstep (they are published, versioned artifacts):
+  - **landing** — `src/index.js` hand-rolls a `document.addEventListener('submit', …)`
+    email-capture handler → convert to a delegated `onFormSuccess` (or `data-on-success`
+    on the form markup in `pages/`).
+  - **ab** — admin page inline scripts use `App.ui.openFormModal` / `App.getRouteParams`
+    / `App.escapeHtml` and a `btn.addEventListener('click', …)`; `src/runtime.js` owns a
+    `document.addEventListener('click', …)` delegation for `data-ab-capture`. The click
+    delegation can move to `registerAction` / `onClick`; the modal-open button becomes
+    `data-action`.
+
+    Each updated module gets a lockstep minor bump (per the module version rule) and a
+    republish — flagged, not auto-done.
 - **Out of scope (noted, not done here):** the five *existing* consuming apps
   (reuselists, binder-quest, streamtostory, paper-doll, task-queue) migrate on their
   own cadence once the layer ships; backward compatibility means there is no forced
