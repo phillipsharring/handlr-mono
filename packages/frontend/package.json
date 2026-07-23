@@ -1,6 +1,6 @@
 {
     "name": "@phillipsharring/handlr-frontend",
-    "version": "0.13.1",
+    "version": "0.14.0",
     "description": "HTMX + Handlebars + Tailwind frontend framework",
     "type": "module",
     "scripts": {
