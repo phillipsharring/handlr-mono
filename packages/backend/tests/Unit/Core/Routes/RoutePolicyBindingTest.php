@@ -149,6 +149,61 @@ it('resolves and binds without consulting a policy when action is null', functio
     expect(RpbHandler::$seen)->toBe('xyz');
 });
 
+// ── Fluent resolves()->policy() ──
+
+it('fluent resolves()->policy() resolves, consults (grant), binds, and injects', function () {
+    $router = new Router(rpbContainer(new RpbRecord(['id' => 'abc'])));
+    $router->get('/things/{id}', [RpbHandler::class])
+        ->resolves(RpbRecord::class)
+        ->policy(RpbAction::View);
+
+    $router->dispatch(rpbRequest('/things/abc'), new Response());
+
+    expect(RpbHandler::$built)->toBeTrue()
+        ->and(RpbHandler::$seen)->toBe('abc');
+});
+
+it('fluent policy() denial short-circuits (403) and never builds the handler', function () {
+    $router = new Router(rpbContainer(new RpbRecord(['id' => 'abc'])));
+    $router->get('/things/{id}', [RpbHandler::class])
+        ->resolves(RpbRecord::class)
+        ->policy(RpbAction::Forbidden);
+
+    expect(fn() => $router->dispatch(rpbRequest('/things/abc'), new Response()))
+        ->toThrow(PolicyDenied::class);
+    expect(RpbHandler::$built)->toBeFalse();
+});
+
+it('fluent resolves() alone binds without consulting a policy', function () {
+    $router = new Router(rpbContainer(new RpbRecord(['id' => 'solo'])));
+    $router->get('/things/{id}', [RpbHandler::class])->resolves(RpbRecord::class);
+
+    $router->dispatch(rpbRequest('/things/solo'), new Response());
+
+    expect(RpbHandler::$seen)->toBe('solo');
+});
+
+it('policy() without resolves() throws', function () {
+    $router = new Router(rpbContainer(new RpbRecord(['id' => 'abc'])));
+
+    expect(fn() => $router->get('/things/{id}', [RpbHandler::class])->policy(RpbAction::View))
+        ->toThrow(RuntimeException::class, 'must follow resolves()');
+});
+
+it('fluent modifiers work through a group and route chaining continues after', function () {
+    $router = new Router(rpbContainer(new RpbRecord(['id' => 'grp'])));
+    $router->group('/api')
+        ->get('/things/{id}', [RpbHandler::class])
+            ->resolves(RpbRecord::class)
+            ->policy(RpbAction::View)
+        ->get('/other/{id}', [RpbHandler::class]) // chaining continues after policy()
+    ->end();
+
+    $router->dispatch(rpbRequest('/api/things/grp'), new Response());
+
+    expect(RpbHandler::$seen)->toBe('grp');
+});
+
 it('leaves routes without a Resolves spec untouched (no resolve pipe runs)', function () {
     $router = new Router(rpbContainer(new RpbRecord(['id' => 'abc'])));
     // No spec → no resolve pipe. The handler still autowires a *blank* RpbRecord,
