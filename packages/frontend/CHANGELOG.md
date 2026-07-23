@@ -1,5 +1,37 @@
 # Changelog
 
+## 0.11.0
+
+Declarative HTMX behavior layer (ADR 0003) — fills the gaps HTMX leaves (click
+actions, post-response branching, logout) so pages stop hand-rolling
+`document.addEventListener`. **Purely additive** — existing inline scripts keep
+working unchanged.
+
+### Added
+
+- **Event delegation core** (`core/delegation.js`) — one delegated body-level
+  listener per event type (boosted-nav-safe, no listener accumulation). Exports
+  `onClick(selector, fn)`, `onHtmx(eventType, selector, fn)` (matches the requesting
+  `detail.elt`), and the generic `onEvent(eventType, selector, fn)`.
+- **Named action registry** (`core/actions.js`) — `data-action="name"` runs the
+  handler registered under `name`. Exports `registerAction` / `onAction`, `getAction`,
+  `hasAction`, `runAction`, `initActions`. Built-in actions: **`toggle`** (`data-toggle="#sel"`
+  or `data-action="toggle" data-target="#sel"`) and **`copy`** (copies `data-copy`/text,
+  fires `handlr:copied`; supersedes `initCopyIdHandler`). The registry is framework-internal
+  — not on `window.App`.
+- **Form-response branching** (`core/form-response.js`) — `data-on-success` /
+  `data-on-error` on the requesting element decide the post-response UI. Verbs:
+  `redirect` (→ `meta.redirect`, fallback `data-redirect-url`), `reveal:#sel` (hide the
+  form, reveal the target), `toast:Message`, `action:name`. Imperative escape hatches
+  `onFormSuccess` / `onFormError` hand back eagerly-parsed JSON (`(data, form, xhr)`).
+- **Auth-flow preset** (`core/auth-flows.js`) — built-in **`logout`** action (GET the
+  logout endpoint, then hard-navigate home; best-effort, `preventDefault`s) + `initAuthFlows`.
+  Login/signup/forgot/reset need no new code — they use `data-on-success="redirect"` /
+  `reveal:#sel`.
+- `./init` now wires all of the above via `initActions()`, `initFormResponses()`, and
+  `initAuthFlows()`. All new modules are **side-effect-free on import** (they attach
+  listeners only when their `initX()` runs) — usable à la carte, and the barrel stays clean.
+
 ## 0.2.9
 
 ### Fixed

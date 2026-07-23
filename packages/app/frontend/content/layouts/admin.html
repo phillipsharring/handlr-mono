@@ -35,8 +35,8 @@
                     href="/api/auth/logout"
                     id="logout-link"
                     class="text-sm text-blue-200/70 hover:text-white hover:underline"
-                    hx-get="/api/auth/logout"
-                    hx-swap="none"
+                    data-action="logout"
+                    hx-boost="false"
                 >Logout</a>
             </div>
             <nav class="h-10 flex flex-row flex-wrap items-center gap-4 px-6 text-sm text-slate-300 bg-blue-950">
@@ -62,12 +62,5 @@
         <confirm-dialog></confirm-dialog>
         <component file="auth/login-modal.html"></component>
 
-        <script>
-        document.getElementById('logout-link')?.addEventListener('htmx:afterRequest', function(e) {
-            if (e.detail.successful) {
-                window.location.href = '/';
-            }
-        });
-        </script>
     </body>
 </html>
