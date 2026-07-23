@@ -4,23 +4,24 @@ declare(strict_types=1);
 
 namespace Handlr\Policies;
 
-use RuntimeException;
+use Handlr\Core\RequestException;
+use Handlr\Core\Response;
+use Throwable;
 
 /**
  * Thrown by {@see Decision::orDeny()} when a policy denies an action.
  *
- * Carries the HTTP status to surface (403 by default). Map it to a response in
- * an error pipe.
+ * Extends RequestException (default 403) so the global ErrorPipe renders it
+ * wherever a policy is consulted — inside a resolve pipe or directly in a
+ * handler.
  */
-class PolicyDenied extends RuntimeException
+class PolicyDenied extends RequestException
 {
-    public function __construct(string $message = 'Denied.', private readonly int $status = 403)
-    {
-        parent::__construct($message);
-    }
-
-    public function status(): int
-    {
-        return $this->status;
+    public function __construct(
+        string $message = 'Denied.',
+        int $statusCode = Response::HTTP_FORBIDDEN,
+        ?Throwable $previous = null,
+    ) {
+        parent::__construct($message, $statusCode, $previous);
     }
 }
