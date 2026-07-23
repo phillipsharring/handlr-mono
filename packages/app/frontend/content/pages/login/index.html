@@ -15,6 +15,7 @@
             handlebars-template="global-toast-template"
             hx-disabled-elt="button[type='submit']"
             data-form-errors="inline"
+            data-on-success="redirect"
         >
             <div class="form-field">
                 <label for="login-email" class="block text-sm font-medium">Email</label>
@@ -64,18 +65,3 @@
         </p>
     </div>
 </div>
-
-<script>
-var loginForm = document.querySelector('#app form[action="/api/auth/login"]');
-if (loginForm) {
-    loginForm.addEventListener('htmx:afterRequest', function(e) {
-        if (!e.detail.successful) return;
-        try {
-            var data = JSON.parse(e.detail.xhr.responseText);
-            if (data.meta && data.meta.redirect) {
-                window.location.href = data.meta.redirect;
-            }
-        } catch (_) {}
-    });
-}
-</script>

@@ -18,6 +18,7 @@
             handlebars-template="global-toast-template"
             hx-disabled-elt="button[type='submit']"
             data-form-errors="inline"
+            data-on-success="reveal:#forgot-success"
         >
             <div class="form-field">
                 <label for="forgot-email" class="block text-sm font-medium">Email</label>
@@ -51,15 +52,3 @@
         </p>
     </div>
 </div>
-
-<script>
-var forgotForm = document.getElementById('forgot-password-form');
-if (forgotForm) {
-    forgotForm.addEventListener('htmx:afterRequest', function(e) {
-        if (!e.detail.successful) return;
-        // Hide the form, show the success message
-        forgotForm.classList.add('hidden');
-        document.getElementById('forgot-success').classList.remove('hidden');
-    });
-}
-</script>

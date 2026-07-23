@@ -16,6 +16,7 @@
             handlebars-template="global-toast-template"
             hx-disabled-elt="button[type='submit']"
             data-form-errors="inline"
+            data-on-success="reveal:#reset-success"
         >
             <input type="hidden" name="token" id="reset-token" />
 
@@ -82,16 +83,5 @@ window.onReady(function() {
     }
 
     document.getElementById('reset-token').value = token;
-
-    form.addEventListener('htmx:afterRequest', function(e) {
-        if (!e.detail.successful) return;
-        try {
-            var data = JSON.parse(e.detail.xhr.responseText);
-            if (data.status === 'success') {
-                form.classList.add('hidden');
-                document.getElementById('reset-success').classList.remove('hidden');
-            }
-        } catch (_) {}
-    });
 });
 </script>

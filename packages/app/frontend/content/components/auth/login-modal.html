@@ -51,14 +51,3 @@
         {{> formButtons label="Login"}}
     </form>
 </template>
-
-<script>
-(function() {
-    // Logout redirect on success
-    document.getElementById('logout-link')?.addEventListener('htmx:afterRequest', function(e) {
-        if (e.detail.successful) {
-            window.location.href = '/';
-        }
-    });
-})();
-</script>

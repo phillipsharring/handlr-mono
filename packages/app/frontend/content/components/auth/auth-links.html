@@ -36,9 +36,8 @@
             <a
                 href="/"
                 class="block px-4 py-2 text-sm text-stone-700 hover:bg-stone-100 transition-colors"
-                hx-get="/api/auth/logout"
-                hx-swap="none"
-                hx-on::after-request="window.location.href='/'"
+                data-action="logout"
+                hx-boost="false"
             >Logout</a>
             <div data-requires-permission="admin.access" hidden>
                 <hr class="my-1 border-stone-200">
