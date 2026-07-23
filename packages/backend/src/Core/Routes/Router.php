@@ -10,6 +10,7 @@ use Handlr\Core\Container\ContainerInterface;
 use Handlr\Core\Request;
 use Handlr\Core\Response;
 use Handlr\Pipes\Pipe;
+use Handlr\Policies\PolicyAction;
 use Handlr\Resolution\ResolutionRegistry;
 use Handlr\Resolution\Resolver;
 use Handlr\Resolution\ResolvePipe;
@@ -90,6 +91,14 @@ class Router
      * @var array<string, string>
      */
     private array $routeOrigins = [];
+
+    /**
+     * The most recently registered route, as {method, index} into $routes, so
+     * the fluent resolves()/policy() modifiers can attach metadata to it.
+     *
+     * @var array{method: string, index: int}|null
+     */
+    private ?array $lastRoute = null;
 
     /**
      * Stack of "origin labels" pushed during route registration. The top of
@@ -263,6 +272,8 @@ class Router
             'pipes' => $pipes,
             'resolve' => $resolve,
         ];
+
+        $this->lastRoute = ['method' => $method, 'index' => count($this->routes[$method]) - 1];
     }
 
     /**
@@ -454,6 +465,70 @@ class Router
     {
         $this->add('DELETE', $path, $pipes, $resolve);
         return $this;
+    }
+
+    /**
+     * Declare that the most recently registered route resolves a record.
+     *
+     * Fluent alternative to passing a Resolves spec. The record's Table is looked
+     * up from the ResolutionRegistry; the record is bound into the request scope
+     * for the handler. Chain policy() after this to also consult a policy.
+     *
+     * @param class-string $record The record type to resolve and bind.
+     * @param string       $param  Route param holding the id (default 'id').
+     * @return self Fluent interface — continue declaring routes as usual.
+     *
+     * @example
+     *     $router->delete('/checklists/{id:uuid}', [DeleteChecklist::class])
+     *         ->resolves(ChecklistRecord::class)
+     *         ->policy(ChecklistAction::Delete);
+     */
+    public function resolves(string $record, string $param = 'id'): self
+    {
+        $this->applyResolve(static fn(?Resolves $current): Resolves =>
+            new Resolves($record, $current?->action, $param));
+
+        return $this;
+    }
+
+    /**
+     * Declare the policy action to consult for the most recently registered
+     * route. Must follow resolves() — the record it authorizes comes from there.
+     *
+     * @return self Fluent interface.
+     *
+     * @throws RuntimeException If called before resolves() on this route.
+     */
+    public function policy(PolicyAction $action): self
+    {
+        $this->applyResolve(static function (?Resolves $current) use ($action): Resolves {
+            if ($current === null) {
+                throw new RuntimeException(
+                    'policy() must follow resolves() — there is no record to authorize.'
+                );
+            }
+            return new Resolves($current->record, $action, $current->param);
+        });
+
+        return $this;
+    }
+
+    /**
+     * Apply a mutation to the last route's resolve metadata.
+     *
+     * @param callable(?Resolves): Resolves $mutator
+     */
+    private function applyResolve(callable $mutator): void
+    {
+        if ($this->lastRoute === null) {
+            throw new RuntimeException('resolves()/policy() must follow a route declaration.');
+        }
+
+        $method = $this->lastRoute['method'];
+        $index = $this->lastRoute['index'];
+        $current = $this->routes[$method][$index]['resolve'] ?? null;
+
+        $this->routes[$method][$index]['resolve'] = $mutator($current);
     }
 
     /**
