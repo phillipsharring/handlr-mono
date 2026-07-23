@@ -26,7 +26,7 @@ use Throwable;
  *         return Response::json(['error' => $e->getMessage()], $e->getStatusCode());
  *     }
  */
-final class RequestException extends InvalidArgumentException
+class RequestException extends InvalidArgumentException
 {
     /**
      * @param string $message Error message describing the request problem

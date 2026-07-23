@@ -4,6 +4,27 @@
 
 ### Added
 
+- **Route policy binding** — a route can declare `new Resolves(RecordClass, Action)`
+  as trailing metadata (`->delete('/checklists/{id:uuid}', [Handler::class],
+  new Resolves(ChecklistRecord::class, ChecklistAction::Delete))`). `Router::dispatch()`
+  injects a generic `ResolvePipe` just before the handler (after auth pipes) that
+  resolves the record via its Table, consults its Policy with the action, and binds
+  it into the request scope for the handler to receive by type hint.
+- **`ResolutionRegistry`** — maps `RecordClass → [Table, Policy]` (populated in a
+  provider's `boot()`), so routes name only the record + action. Registered as a
+  singleton by the Kernel, along with a default `Resolver` (`TableResolver`).
+
+### Changed
+
+- `RecordNotFound` and `PolicyDenied` now extend `RequestException`, so the global
+  `ErrorPipe` renders them as 404 / 403 wherever a record is resolved or a policy
+  consulted (including `Decision::orDeny()` inside a handler). `RequestException` is
+  no longer `final`.
+
+## 0.11.0
+
+### Added
+
 - **Request-scoped container** — `Container::scope()` returns a child that reads
   through to its parent but keeps writes local, discarded at end of request. Lets
   a pipe bind a request-lifetime instance (e.g. a resolved Record) that downstream
