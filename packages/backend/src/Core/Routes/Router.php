@@ -167,17 +167,28 @@ class Router
         // Set route params on request for easy access
         $request->setRouteParams($params);
 
+        // Each request gets its own container scope. Pipes/handlers resolve from
+        // it, and anything a pipe binds into it (e.g. a resolved Record) is
+        // visible to downstream handlers by type hint, then discarded when this
+        // method returns. See Container::scope().
+        $scope = $this->container->scope();
+
         $pipeline = new Pipeline();
 
+        // Global pipes are pre-built app singletons — lay them as-is.
         foreach ($this->globalPipes as $pipe) {
             $pipeline->lay($pipe);
         }
 
+        // Route pipes resolve lazily from the request scope, at the moment the
+        // chain reaches each one. A pipe that short-circuits (auth/policy denial)
+        // means downstream handlers are never constructed.
         foreach ($matchedRoute['pipes'] as $pipeClass) {
-            $pipe = (is_string($pipeClass))
-                ? $this->container->get($pipeClass)
-                : $pipeClass;
-            $pipeline->lay($pipe);
+            if (is_string($pipeClass)) {
+                $pipeline->defer(static fn(): Pipe => $scope->get($pipeClass));
+            } else {
+                $pipeline->lay($pipeClass);
+            }
         }
 
         return $pipeline->run($request, $response, $params);

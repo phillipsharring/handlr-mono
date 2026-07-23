@@ -106,6 +106,8 @@ use RuntimeException;
  * // CORRECT:
  * [['created_at', 'DESC']]
  * ```
+ *
+ * @template T of Record
  */
 abstract class Table
 {
@@ -150,7 +152,7 @@ abstract class Table
      *
      * @param int|string $id The record ID (integer or UUID string)
      *
-     * @return Record|null The record if found, null otherwise
+     * @return T|null The record if found, null otherwise
      */
     public function findById(int|string $id): ?Record
     {
