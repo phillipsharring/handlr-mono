@@ -93,3 +93,5 @@ export {
     onFormError,
     initFormResponses,
 } from './core/form-response.js';
+// Auth-flow preset (logout action)
+export { logoutAction, initAuthFlows } from './core/auth-flows.js';

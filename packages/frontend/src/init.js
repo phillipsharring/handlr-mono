@@ -18,6 +18,8 @@ import './hooks.js';
 // import-time self-registration) and are turned on here.
 import { initActions } from './core/actions.js';
 import { initFormResponses } from './core/form-response.js';
+import { initAuthFlows } from './core/auth-flows.js';
 
 initActions();
 initFormResponses();
+initAuthFlows(); // registers the `logout` action (auth is part of the default batteries)
