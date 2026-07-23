@@ -4,6 +4,23 @@
 
 ### Added
 
+- **Fluent route policy binding** — `->resolves(RecordClass)` and `->policy(Action)`
+  chain off a route declaration as an alternative to the `new Resolves(...)` spec
+  arg. They attach metadata to the most recently registered route and return the
+  group/router, so route chaining continues:
+
+  ```php
+  $router->delete('/checklists/{id:uuid}', [DeleteChecklist::class])
+      ->resolves(ChecklistRecord::class)
+      ->policy(ChecklistAction::Delete);
+  ```
+
+  `policy()` must follow `resolves()`. The spec-arg form still works.
+
+## 0.12.0
+
+### Added
+
 - **Route policy binding** — a route can declare `new Resolves(RecordClass, Action)`
   as trailing metadata (`->delete('/checklists/{id:uuid}', [Handler::class],
   new Resolves(ChecklistRecord::class, ChecklistAction::Delete))`). `Router::dispatch()`
