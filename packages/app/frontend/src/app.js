@@ -11,7 +11,6 @@ import {
     onPageLoad,
     onAfterSwap,
     registerAdminPermissionPrefixes,
-    registerAbHelpers,
 } from '@phillipsharring/handlr-frontend';
 
 // Boosted navigation defaults to scrolling the swapped content into view.
@@ -23,7 +22,6 @@ window.Handlebars = Handlebars;
 // Register Handlebars helpers
 registerToastHelpers(Handlebars);
 registerHandlebarsHelpers(Handlebars);
-registerAbHelpers(Handlebars);
 
 // Import HTMX extensions AFTER globals are set
 import '@phillipsharring/handlr-frontend/src/lib/json-enc.js';
@@ -38,9 +36,6 @@ import '@phillipsharring/handlr-frontend/init';
 registerAdminPermissionPrefixes([
     ['/admin/', 'admin.access'],
 ]);
-
-// A/B testing (self-registering — fetches assignments via lifecycle hooks)
-import './ab.js';
 
 // Assemble window namespace (must be after all framework imports so the
 // things namespace.js re-exports are available, and BEFORE the module glob

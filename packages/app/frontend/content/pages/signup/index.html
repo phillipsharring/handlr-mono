@@ -97,7 +97,6 @@ if (signupForm) {
         if (!e.detail.successful) return;
         try {
             var data = JSON.parse(e.detail.xhr.responseText);
-            App.ab.capture('signup');
             if (data.meta && data.meta.redirect) {
                 window.location.href = data.meta.redirect;
             }

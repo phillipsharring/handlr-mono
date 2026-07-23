@@ -25,7 +25,6 @@ import {
     onPageLoad,
     onHistoryRestore,
 } from '@phillipsharring/handlr-frontend';
-import { capture as abCapture, getAssignments as abGetAssignments } from './ab.js';
 
 window.App = {
     // API client
@@ -53,9 +52,6 @@ window.App = {
         },
         createTypeahead,
     },
-
-    // A/B testing
-    ab: { capture: abCapture, getAssignments: abGetAssignments },
 
     // Lifecycle hooks
     hooks: { onAfterSwap, onAfterSettle, onPageLoad, onHistoryRestore },
