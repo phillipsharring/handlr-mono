@@ -83,4 +83,22 @@ interface ContainerInterface
      * @return ContainerInterface
      */
     public function alias(string $alias, string $target): ContainerInterface;
+
+    /**
+     * Open a request-lifetime child container.
+     *
+     * Reads fall through to this (the parent): any service registered here is
+     * still resolvable from the child. Writes (bind/singleton/factory) land on
+     * the child only and never touch the parent, so top-level bindings stay
+     * pristine. Autowired (unregistered) classes are built by the child, so
+     * their constructor dependencies resolve through the child first — that is
+     * what lets a request-scoped instance (e.g. a resolved Record) be injected
+     * into a downstream handler by type hint.
+     *
+     * Drop the returned scope at the end of the request; it is not shared and
+     * carries no state back to the parent.
+     *
+     * @return ContainerInterface A fresh child bound to this container as parent.
+     */
+    public function scope(): ContainerInterface;
 }
