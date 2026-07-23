@@ -133,6 +133,15 @@ only through the exported `registerAction` / `onAction`. It does **not** hang of
 own `namespace.js`; the framework never claims global namespace real estate. Keeps
 the registry testable and avoids the global-object soup.
 
+**Interaction with the existing `window.App` coupling.** Today, inline page scripts —
+including those in the first-party modules (`ab` uses `App.ui.openFormModal` /
+`App.getRouteParams` / `App.escapeHtml`; see Pass 4) — reach the framework through the
+app-defined `window.App` namespace, because an inline `<script>` can't `import`. The
+new layer *reduces* that coupling rather than extending it: module/page **markup** uses
+`data-action` / `data-on-success` with no namespace dependency at all, and module
+**runtime JS** (`src/*.js`, which can `import`) registers behavior via the named exports
+directly. `window.App` stays an app-owned convenience, never a registration channel.
+
 ### D3 — New code is `initX()`-shaped, wired through `./init` (honors the toolkit ideal)
 
 New modules expose explicit init functions and are called by the `./init` bundle —
