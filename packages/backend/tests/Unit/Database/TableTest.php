@@ -44,6 +44,67 @@ it('findById converts UUID, queries DB, and rehydrates record', function () {
     expect($rec->id)->toBe($uuid);
 });
 
+it('findById converts additional uuidColumns (e.g. user_id) from binary to string', function () {
+    $db = $this->createMock(DbInterface::class);
+    $stmt = $this->createMock(PDOStatement::class);
+
+    $idUuid = '00000000-0000-0000-0000-000000000123';
+    $idBin = 'BIN_ID';
+    $userUuid = '11111111-1111-1111-1111-111111111111';
+    $userBin = 'BIN_USER';
+
+    $db->method('uuidToBin')->with($idUuid)->willReturn($idBin);
+    // binToUuid runs for the pk AND user_id — map by input so order doesn't matter.
+    $db->method('binToUuid')->willReturnMap([
+        [$idBin, $idUuid],
+        [$userBin, $userUuid],
+    ]);
+
+    $db->expects($this->once())
+        ->method('execute')
+        ->with($this->stringContains('FROM `test_table` WHERE `id` = ?'), [$idBin])
+        ->willReturn($stmt);
+
+    $stmt->expects($this->once())
+        ->method('fetch')
+        ->with(PDO::FETCH_ASSOC)
+        ->willReturn(['id' => $idBin, 'user_id' => $userBin, 'name' => 'phil']);
+
+    $rec = (new UuidColsTestTable($db))->findById($idUuid);
+
+    expect($rec->id)->toBe($idUuid)
+        ->and($rec->user_id)->toBe($userUuid); // was left binary before the fix
+});
+
+it('constructing a Record directly stores uuidColumns verbatim (decode is the Table\'s job)', function () {
+    $rec = new UuidColsDummyRecord(['id' => 'the-id', 'user_id' => 'VERBATIM_NOT_DECODED']);
+
+    expect($rec->user_id)->toBe('VERBATIM_NOT_DECODED'); // no binToUuid in the Record anymore
+});
+
+it('Table::hydrate() decodes the primary key and uuidColumns from a raw row', function () {
+    $db = $this->createMock(DbInterface::class);
+
+    $idBin = 'BIN_ID';
+    $idUuid = '00000000-0000-0000-0000-000000000123';
+    $userBin = 'BIN_USER';
+    $userUuid = '11111111-1111-1111-1111-111111111111';
+
+    $db->method('binToUuid')->willReturnMap([
+        [$idBin, $idUuid],
+        [$userBin, $userUuid],
+    ]);
+
+    $rec = (new UuidColsTestTable($db))->hydrate([
+        'id' => $idBin,
+        'user_id' => $userBin,
+        'name' => 'phil',
+    ]);
+
+    expect($rec->id)->toBe($idUuid)
+        ->and($rec->user_id)->toBe($userUuid);
+});
+
 it('findWhere returns hydrated records', function () {
     $db = $this->createMock(DbInterface::class);
     $stmt = $this->createMock(PDOStatement::class);
@@ -244,4 +305,22 @@ class UuidDummyRecord extends DummyRecord
 class UuidTestTable extends TestTable
 {
     protected string $recordClass = UuidDummyRecord::class;
+}
+
+class UuidColsDummyRecord extends DummyRecord
+{
+    public function __construct(array $data = [])
+    {
+        parent::__construct($data, true);
+    }
+
+    public function uuidColumns(): array
+    {
+        return ['user_id'];
+    }
+}
+
+class UuidColsTestTable extends TestTable
+{
+    protected string $recordClass = UuidColsDummyRecord::class;
 }

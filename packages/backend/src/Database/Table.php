@@ -167,11 +167,12 @@ abstract class Table
         $stmt = $this->db->execute($sql, [$id]);
         $data = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($data && $recordInstance->usesUuid() && isset($data[$pk])) {
-            $data[$pk] = $this->db->binToUuid($data[$pk]);
-        }
-
-        return $data ? new $this->recordClass($data) : null;
+        // Route through the shared hydration path so findById() matches
+        // findWhere()/findFirst(): the primary key AND every $uuidColumns entry
+        // (user_id, source_id, …) are converted BINARY(16) -> UUID string. The
+        // old inline conversion only did the primary key, leaving other UUID
+        // columns binary — a silent inconsistency between fetch paths.
+        return $data ? $this->hydrateRow($data, $recordInstance) : null;
     }
 
     /**
@@ -743,6 +744,22 @@ abstract class Table
     private function hydrateRows(array $rows, Record $recordInstance): array
     {
         return array_map(fn(array $row) => $this->hydrateRow($row, $recordInstance), $rows);
+    }
+
+    /**
+     * Build a fully-hydrated record from a raw database row, decoding the primary
+     * key and every `$uuidColumns` entry from BINARY(16) to UUID string.
+     *
+     * Use this when you run a custom query and need a record — instead of
+     * `new SomeRecord($row)`, which no longer decodes (records are plain data
+     * holders; decoding lives here in the data-access layer).
+     *
+     * @param array<string,mixed> $row A raw row (e.g. from PDO FETCH_ASSOC).
+     * @return Record
+     */
+    public function hydrate(array $row): Record
+    {
+        return $this->hydrateRow($row, $this->getRecordInstance());
     }
 
     /**
