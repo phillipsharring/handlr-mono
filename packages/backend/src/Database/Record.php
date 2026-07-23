@@ -41,8 +41,9 @@ use Ramsey\Uuid\Uuid;
  * echo $user->id;    // e.g., "0192a3b4-c5d6-7e8f-9a0b-1c2d3e4f5a6b"
  * echo $user->name;  // "John Doe"
  *
- * // Hydrate from database row
- * $user = new UserRecord($databaseRow);
+ * // Hydrate from a raw database row (decodes binary UUID columns) — use the
+ * // Table, not `new`: `new UserRecord($row)` stores the row verbatim.
+ * $user = $usersTable->hydrate($databaseRow);
  * ```
  *
  * ## UUID vs auto-increment IDs
@@ -255,13 +256,11 @@ abstract class Record implements JsonSerializable, ArrayAccess
             $this->id = $this->generateUuid();
         }
 
-        // Populate $data, converting UUID columns from binary
-        foreach ($data as $key => $value) {
-            if (in_array($key, $this->uuidColumns(), true) && $value !== null) {
-                $value = $this->binToUuid($value);
-            }
-            $this->data[$key] = $value;
-        }
+        // Store $data as-is. Binary <-> string UUID conversion is a data-access
+        // concern owned by Table (see Table::hydrate() / hydrateRow()); a Record
+        // is a plain data holder and does not decode DB representations itself.
+        // Build records from raw database rows via Table::hydrate(), not `new`.
+        $this->data = $data;
     }
 
     /**
@@ -427,15 +426,4 @@ abstract class Record implements JsonSerializable, ArrayAccess
         return Uuid::uuid7()->toString();
     }
 
-    /**
-     * Convert binary UUID to string format.
-     */
-    private function binToUuid(string $value): string
-    {
-        if (Uuid::isValid($value)) {
-            return $value;
-        }
-
-        return Uuid::fromBytes($value)->toString();
-    }
 }
