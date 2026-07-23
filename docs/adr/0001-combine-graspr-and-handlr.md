@@ -9,10 +9,20 @@
 
 ## As-built notes (2026-06-30)
 
-The rollout is complete. Two names drifted from the plan during implementation:
+The rollout is complete. Names drifted from the plan during implementation:
 
-- **`packages/site` → `packages/static`**, published as **`@phillipsharring/create-handlr-static`** (not `create-handlr-site`). The repo also lives at **`~/Sites/handlr-mono`**, not `~/Sites/handlr` (the latter remains the pre-mono container of the old per-package repos, pending cleanup).
+- **Package names carry layer suffixes** rather than the bare `handlr` spelling D2 first
+  proposed — `handlr-frontend`, `handlr-backend`, `handlr-build`, `handlr-app`,
+  `create-handlr-static`. The suffixes disambiguate the five artifacts at a glance.
+- **`packages/site` → `packages/static`**, published as **`@phillipsharring/create-handlr-static`** (not `create-handlr-site`).
 - **`packages/skeleton` → `packages/app`**, published as `phillipsharring/handlr-app` (composer) — the name matches the plan; only the directory differs.
+- **The monorepo lives at `~/Sites/handlr/mono/`** (packages `packages/{backend,frontend,build,app,static}`), *not* the `~/Sites/handlr` root. The root is the umbrella container — it holds the `Makefile`, `BACKLOG.md`, `modules/`, and the `mono/` repo, and is the pre-mono home of the old per-package folders (pending cleanup). **This `mono/docs` tree is the canonical, published (VitePress) docs and the source of truth for all ADRs** (see ADR 0003 §"Open questions" resolution — the umbrella `~/Sites/handlr/docs/adr` copies were retired to kill drift).
+
+App migration (rollout step 8) is **done** — all five consuming apps (binder-quest,
+paper-doll, reuselists, streamtostory, phillipharrington.com) consume the combined
+`handlr-*` packages with no `graspr-*` remaining. Remaining work is ordinary version-drift
+maintenance: caret pins on `0.x` lock to the minor, so each lockstep bump is applied per
+app by hand.
 
 Also added post-ADR: a **`module:install`** command (`packages/backend/scripts/module.php`, wired into the app skeleton's `composer.json`) that installs both halves of a dual-published module at the matching version — the ergonomic payoff of the D4 module contract. Shipped in the 0.9.0 lockstep release.
 
@@ -51,7 +61,7 @@ There is **no such thing as one literal package** here: npm and Packagist are se
 
 ### Detailed decisions
 
-- **D1 — Repo topology (accepted):** **Monorepo** at `~/Sites/handlr`, `packages/*` layout (the npm/pnpm/Turborepo convention; keeps the root clean for workspace config + `docs/`). Packages:
+- **D1 — Repo topology (accepted):** **Monorepo** at `~/Sites/handlr/mono` (see As-built notes; the plan block below shows the *original* dir/package names, since corrected), `packages/*` layout (the npm/pnpm/Turborepo convention; keeps the root clean for workspace config + `docs/`). Packages:
 
   ```
   handlr/                         # monorepo root (git repo)

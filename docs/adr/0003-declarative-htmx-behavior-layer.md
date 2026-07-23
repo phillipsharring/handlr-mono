@@ -1,9 +1,11 @@
-# ADR 0002 — Declarative HTMX behavior layer (kill the `addEventListener` boilerplate)
+# ADR 0003 — Declarative HTMX behavior layer (kill the `addEventListener` boilerplate)
 
-- **Status:** Proposed
+- **Status:** Accepted 2026-07-22
 - **Date:** 2026-07-22
 - **Deciders:** Phillip Harrington
-- **Relates to:** `0001-combine-graspr-and-handlr.md`; `packages/frontend/CLAUDE.md` ("a toolkit on top of HTMX, not a framework" — GUIDING)
+- **Relates to:** `0002-handlr-frontend-as-htmx-toolkit.md` (the toolkit principle this
+  ADR operationalizes — canonical since `packages/frontend/CLAUDE.md` is gitignored);
+  `0001-combine-graspr-and-handlr.md`
 
 ---
 
@@ -85,9 +87,27 @@ lose power versus raw `addEventListener`.
 ```
 
 - `data-action="name"` → looks up a registered handler, calls `handler(el, event)`.
-- A small set of **built-in actions** ships registered: at minimum `toggle`
-  (`data-toggle="#sel"` show/hide), `copy` (copy `data-copy` / element text). Keep the
-  built-in set deliberately tiny; apps register their own domain actions.
+- **Built-in actions ship registered (resolved Q2): `toggle` and `copy`.**
+  - `toggle` — `data-toggle="#sel"` is sugar for `data-action="toggle" data-target="#sel"`
+    (show/hide the target).
+  - `copy` — copy `data-copy` (or the element's text) to the clipboard. Supersedes the
+    existing bespoke `initCopyIdHandler()`.
+  - **No built-in `open-modal`.** Modal opening is already covered richly by
+    `App.ui.openFormModal` (templateId / formUrl / fields / size) and the underlying
+    `openGlobalModal` — which *already* supports the three variants **modal, confirm
+    (`HandlrConfirm`), and takeover (`options.takeover` → `.modal-takeover`)** framework-side
+    (takeover is not binder-quest-only). Those stay the imperative surface; an app that
+    wants a declarative open registers its own `data-action`. A first-class
+    `data-action="open-modal"` can be added later as a built-in if demand appears — out
+    of scope for v1.
+  - Keep the built-in set deliberately tiny; apps register their own domain actions.
+
+**Direction on `window.App`.** Built-in actions live in the framework registry (D2), *not*
+on `window.App`. `window.App` remains an app-owned convenience namespace for imperative
+calls from inline scripts (`App.ui.openFormModal`, `App.escapeHtml`, …); it is **not**
+deprecated, but it is **not** the registration/dispatch channel for this layer. Net
+direction: markup dispatches via `data-*`, runtime JS binds via named exports, and
+`window.App` shrinks toward "handy imperative shortcuts" rather than "the API."
 
 *Form-response branching* — `data-on-success` / `data-on-error` on the requesting
 element, read by one delegated `htmx:afterRequest` listener:
@@ -98,12 +118,22 @@ element, read by one delegated `htmx:afterRequest` listener:
 <form hx-post="/api/things"      data-on-success="toast:Saved">…</form>
 ```
 
-Verbs (v1, single-verb per attribute):
+Verbs (v1 — **single verb per attribute**, resolved Q1):
 - `redirect` → navigate to `meta.redirect` in the parsed JSON body (fallback:
   `data-redirect-url`).
-- `reveal:#sel` → hide the requesting form, `hidden`-reveal the target node.
+- `reveal:#sel` → **compound-but-atomic**: hide the requesting form *and* `hidden`-reveal
+  the target node. This is one verb, not a chain — it matches the exact two-op pattern
+  every app hand-rolls today (`form.classList.add('hidden')` +
+  `success.classList.remove('hidden')`).
 - `toast:Message` → fire a toast (reuses `HandlrToast`).
 - `action:name` → run a registered action — the bridge from A into B.
+
+**Single-verb, confirmed by the ecosystem sweep:** across all five apps, every success
+path is exactly *one* outcome — `redirect`, or the `reveal` pair. No app chains
+independent outcomes (no toast-then-redirect, etc.). So multi-verb parsing buys nothing
+now; anything richer later goes through `action:name` (compose in JS), which keeps the
+attribute grammar trivially explicit. If a genuine chain need appears, revisit — adding
+multi-verb later is backward compatible.
 
 Unrecognized/absent attributes = no-op (fully backward compatible; existing inline
 scripts keep working untouched).
@@ -122,8 +152,12 @@ onHtmx('htmx:afterSettle', '#grid', (el, e) => { … });// generic delegated htm
 ```
 
 `registerAction` and `onAction` are the same primitive (alias). `onFormSuccess`
-pre-filters `e.detail.successful` and hands back parsed JSON so callers stop
-re-writing the try/parse dance.
+pre-filters `e.detail.successful` and (resolved Q3) **parses the JSON body eagerly**,
+so callers stop re-writing the try/parse dance — the signature is
+`onFormSuccess(sel, (data, form, xhr) => …)`: parsed `data` first for the common case,
+with the raw `form` and `xhr` also passed for the cases that need headers/status/text or
+a non-JSON body. A parse failure yields `data === null` (callback still fires with the
+raw `xhr`), never a thrown error.
 
 ### D2 — Registry lives in the framework, not on `window.App` (no namespace soup)
 
@@ -207,6 +241,38 @@ refactor," rather than adding to the existing self-registering-`core/*` debt.
   co-versioned lockstep with `phillipsharring/handlr` per ADR 0001 (backend unchanged,
   but manifests bump together by convention).
 
+### D6 — Naming symmetry: the attribute and the function share the token (defuses "two ways")
+
+The "two ways to express a click" concern is mostly a *framing* problem — resolve it by
+making the declarative and imperative surfaces **name-symmetric around a shared token**,
+and by positioning them as **one primary path + one escape hatch**, not two peers:
+
+| Concept | Declarative (markup) | Imperative (JS) | Shared token |
+|---|---|---|---|
+| Named click behavior | `data-action="archive"` | `registerAction('archive', fn)` / `onAction` | `action` / the name `archive` |
+| Form success | `data-on-success="redirect"` | `onFormSuccess(sel, fn)` | `success` |
+| Form error | `data-on-error="…"` | `onFormError(sel, fn)` | `error` |
+| Built-in toggle | `data-toggle="#x"` | (built-in `action` `toggle`) | `toggle` |
+
+Two rules make this coherent:
+
+1. **`data-action` + `registerAction` are not two ways — they are the two *halves* of one
+   way.** The attribute is the *invocation site*; the export is the *definition*. They are
+   already unified by the action name — that is the entire point of the registry. There is
+   no duplicated behavior, only "define once, invoke from markup."
+
+2. **`onClick(selector, fn)` is the escape hatch, documented as secondary.** It is the
+   only genuinely-separate mechanism (arbitrary selector, no registration, no name). Use it
+   when a behavior isn't worth naming or must match a selector rather than a `data-action`.
+   Docs will state the rule plainly: *reach for `data-action` + `registerAction` by default;
+   drop to `onClick` only when you don't want a named action.*
+
+Same principle answers "toggle vs openModal": `toggle` is a **built-in action name**
+(symmetric: `data-toggle` ⇔ registered `toggle` action), whereas modal-opening stays the
+richer imperative `App.ui.openFormModal` and is deliberately *not* mirrored as a v1
+attribute (see D1). We do not force symmetry where the imperative API is genuinely richer
+than any attribute could be.
+
 ---
 
 ## Consequences
@@ -234,12 +300,37 @@ refactor," rather than adding to the existing self-registering-`core/*` debt.
 
 ---
 
-## Open questions (resolve during pass 1)
+## Resolved questions
 
-1. Should `data-on-success` accept **multiple** verbs (e.g. `toast:Saved; reveal:#x`)
-   or stay single-verb with `action:` as the composition path? (Lean: single-verb v1.)
-2. Do we ship `copy` / `open-modal` as **built-in actions**, or only `toggle` and let
-   apps register the rest? (Lean: `toggle` + `copy` built-in; modal opening already
-   has `App.ui.openFormModal`.)
-3. Does `onFormSuccess` parse JSON eagerly (convenient) or hand back the raw XHR
-   (flexible)? (Lean: parse, with the raw XHR also on the callback's second/third arg.)
+1. **Multi-verb `data-on-success`?** → **No — single verb per attribute.** The ecosystem
+   sweep shows every success path is one outcome (`redirect` or the `reveal` pair); no app
+   chains outcomes. `action:name` is the composition escape hatch. Multi-verb can be added
+   later backward-compatibly if a real chain need appears. (See D1.)
+2. **Which built-in actions?** → **`toggle` + `copy`.** No built-in `open-modal`
+   (`App.ui.openFormModal` covers it richly; modal/confirm/takeover already exist
+   framework-side). Built-ins live in the framework registry, not on `window.App`. (See D1.)
+3. **`onFormSuccess` payload?** → **Parse JSON eagerly**, signature
+   `(data, form, xhr) => …`; parse failure ⇒ `data === null`, never throws. (See D1/B.)
+4. **"Two ways to express a click"?** → Defused via **name symmetry + primary/escape-hatch
+   positioning** (D6): `data-action` and `registerAction` are two halves of one path;
+   `onClick` is the documented secondary escape hatch.
+
+## Docs consolidation (resolved 2026-07-22)
+
+- **`~/Sites/handlr/mono/docs` is the single canonical, published (VitePress) docs home and
+  the source of truth for all ADRs.** ADR 0002 (`handlr-frontend-as-htmx-toolkit`) was
+  ported into the mono tree; the duplicate ADR copies under the umbrella
+  `~/Sites/handlr/docs/adr` were removed (the umbrella `docs/` keeps only its
+  umbrella-specific `MAKEFILE.md`).
+- The two divergent `0001` copies were **reconciled into the mono copy** — richer as-built
+  facts (package suffixes, app-migration status) folded in, and the incorrect
+  `~/Sites/handlr-mono` path corrected to `~/Sites/handlr/mono`.
+- The umbrella `~/Sites/handlr` repo remains, but only for umbrella concerns (`Makefile`,
+  `BACKLOG.md`, `modules/`, and the nested `mono/` repo) — **not** docs/ADRs.
+
+## Follow-up (own ADR)
+
+- **Modal API unification (future ADR 0004).** modal / confirm / takeover are referenced
+  here only to justify *not* shipping a built-in `open-modal` action in v1. Unifying/cleaning
+  the modal API is deferred to its own ADR. During passes 1–4 we still fix modal-adjacent
+  issues opportunistically, but the cleanup itself is out of scope here.
