@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Handlr\Core\Routes;
 
+use Handlr\Resolution\Resolves;
+
 /**
  * Route group for organizing routes with shared prefixes and middleware.
  *
@@ -177,9 +179,9 @@ final class RouteGroup
      *     $group->get('/users', [ListUsersHandler::class]);
      *     $group->get('/users/{id}', [GetUserHandler::class]);
      */
-    public function get(string $path, array $pipes): self
+    public function get(string $path, array $pipes, ?Resolves $resolve = null): self
     {
-        $this->router->get($this->joinPaths($this->prefix, $path), array_merge($this->pipes, $pipes));
+        $this->router->get($this->joinPaths($this->prefix, $path), array_merge($this->pipes, $pipes), $resolve);
         return $this;
     }
 
@@ -193,9 +195,9 @@ final class RouteGroup
      * @example
      *     $group->post('/users', [ValidateUserPipe::class, CreateUserHandler::class]);
      */
-    public function post(string $path, array $pipes): self
+    public function post(string $path, array $pipes, ?Resolves $resolve = null): self
     {
-        $this->router->post($this->joinPaths($this->prefix, $path), array_merge($this->pipes, $pipes));
+        $this->router->post($this->joinPaths($this->prefix, $path), array_merge($this->pipes, $pipes), $resolve);
         return $this;
     }
 
@@ -209,9 +211,9 @@ final class RouteGroup
      * @example
      *     $group->patch('/users/{id}', [ValidateUserPipe::class, UpdateUserHandler::class]);
      */
-    public function patch(string $path, array $pipes): self
+    public function patch(string $path, array $pipes, ?Resolves $resolve = null): self
     {
-        $this->router->patch($this->joinPaths($this->prefix, $path), array_merge($this->pipes, $pipes));
+        $this->router->patch($this->joinPaths($this->prefix, $path), array_merge($this->pipes, $pipes), $resolve);
         return $this;
     }
 
@@ -225,9 +227,9 @@ final class RouteGroup
      * @example
      *     $group->delete('/users/{id}', [DeleteUserHandler::class]);
      */
-    public function delete(string $path, array $pipes): self
+    public function delete(string $path, array $pipes, ?Resolves $resolve = null): self
     {
-        $this->router->delete($this->joinPaths($this->prefix, $path), array_merge($this->pipes, $pipes));
+        $this->router->delete($this->joinPaths($this->prefix, $path), array_merge($this->pipes, $pipes), $resolve);
         return $this;
     }
 

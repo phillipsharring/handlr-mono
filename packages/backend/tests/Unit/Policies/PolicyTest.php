@@ -79,7 +79,7 @@ it('orDeny() throws PolicyDenied with the status and reason when denied', functi
 
     expect($caught)->toBeInstanceOf(PolicyDenied::class)
         ->and($caught->getMessage())->toBe('blocked')
-        ->and($caught->status())->toBe(404);
+        ->and($caught->getStatusCode())->toBe(404);
 });
 
 // ── Policy dispatch ──

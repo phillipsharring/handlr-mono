@@ -4,10 +4,16 @@ declare(strict_types=1);
 
 namespace Handlr\Core\Routes;
 
+use Handlr\Auth\AuthContext;
 use Handlr\Core\Container\Container;
+use Handlr\Core\Container\ContainerInterface;
 use Handlr\Core\Request;
 use Handlr\Core\Response;
 use Handlr\Pipes\Pipe;
+use Handlr\Resolution\ResolutionRegistry;
+use Handlr\Resolution\Resolver;
+use Handlr\Resolution\ResolvePipe;
+use Handlr\Resolution\Resolves;
 use RuntimeException;
 
 /**
@@ -183,7 +189,19 @@ class Router
         // Route pipes resolve lazily from the request scope, at the moment the
         // chain reaches each one. A pipe that short-circuits (auth/policy denial)
         // means downstream handlers are never constructed.
-        foreach ($matchedRoute['pipes'] as $pipeClass) {
+        //
+        // When the route declares a Resolves spec, inject the ResolvePipe just
+        // before the final pipe (the handler) so it runs after auth pipes have
+        // populated the request context, resolving + authorizing + binding the
+        // record for the handler to receive by type hint.
+        $resolve = $matchedRoute['resolve'] ?? null;
+        $lastIndex = count($matchedRoute['pipes']) - 1;
+
+        foreach ($matchedRoute['pipes'] as $i => $pipeClass) {
+            if ($resolve instanceof Resolves && $i === $lastIndex) {
+                $pipeline->lay($this->makeResolvePipe($resolve, $scope));
+            }
+
             if (is_string($pipeClass)) {
                 $pipeline->defer(static fn(): Pipe => $scope->get($pipeClass));
             } else {
@@ -195,13 +213,27 @@ class Router
     }
 
     /**
+     * Build the generic resolve pipe from the request scope for a route's spec.
+     */
+    private function makeResolvePipe(Resolves $spec, ContainerInterface $scope): ResolvePipe
+    {
+        return new ResolvePipe(
+            $spec,
+            $scope,
+            $scope->get(ResolutionRegistry::class),
+            $scope->get(Resolver::class),
+            $scope->get(AuthContext::class),
+        );
+    }
+
+    /**
      * Register a route for a given HTTP method.
      *
      * @param string $method HTTP method (GET, POST, PATCH, DELETE)
      * @param string $path URL pattern with optional parameters
      * @param array<class-string|object> $pipes Pipes to execute for this route
      */
-    private function add(string $method, string $path, array $pipes): void
+    private function add(string $method, string $path, array $pipes, ?Resolves $resolve = null): void
     {
         $path = $this->normalizePath($path);
 
@@ -229,6 +261,7 @@ class Router
             'regex' => $compiled['regex'],
             'params' => $compiled['params'],
             'pipes' => $pipes,
+            'resolve' => $resolve,
         ];
     }
 
@@ -360,9 +393,9 @@ class Router
      * @example With middleware:
      *     $router->get('/admin/users', [AdminAuthPipe::class, ListUsersHandler::class]);
      */
-    public function get(string $path, array $pipes): self
+    public function get(string $path, array $pipes, ?Resolves $resolve = null): self
     {
-        $this->add('GET', $path, $pipes);
+        $this->add('GET', $path, $pipes, $resolve);
         return $this;
     }
 
@@ -381,9 +414,9 @@ class Router
      * @example Action endpoint:
      *     $router->post('/auth/login', [LoginHandler::class]);
      */
-    public function post(string $path, array $pipes): self
+    public function post(string $path, array $pipes, ?Resolves $resolve = null): self
     {
-        $this->add('POST', $path, $pipes);
+        $this->add('POST', $path, $pipes, $resolve);
         return $this;
     }
 
@@ -399,9 +432,9 @@ class Router
      * @example Update resource:
      *     $router->patch('/users/{id:uuid}', [ValidateUserPipe::class, UpdateUserHandler::class]);
      */
-    public function patch(string $path, array $pipes): self
+    public function patch(string $path, array $pipes, ?Resolves $resolve = null): self
     {
-        $this->add('PATCH', $path, $pipes);
+        $this->add('PATCH', $path, $pipes, $resolve);
         return $this;
     }
 
@@ -417,9 +450,9 @@ class Router
      * @example Delete resource:
      *     $router->delete('/users/{id:uuid}', [DeleteUserHandler::class]);
      */
-    public function delete(string $path, array $pipes): self
+    public function delete(string $path, array $pipes, ?Resolves $resolve = null): self
     {
-        $this->add('DELETE', $path, $pipes);
+        $this->add('DELETE', $path, $pipes, $resolve);
         return $this;
     }
 

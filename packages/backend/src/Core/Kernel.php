@@ -11,6 +11,9 @@ use Handlr\Log\Logger;
 use Handlr\Mail\Mailer;
 use Handlr\Pipes\ErrorPipe;
 use Handlr\Pipes\LogPipe;
+use Handlr\Resolution\ResolutionRegistry;
+use Handlr\Resolution\Resolver;
+use Handlr\Resolution\TableResolver;
 use Handlr\Session\DatabaseSessionDriver;
 use Handlr\Session\Session;
 use Handlr\Session\SessionInterface;
@@ -134,6 +137,17 @@ final class Kernel
         $this->registerDatabase();
         $this->registerSession();
         $this->registerMailer();
+        $this->registerResolution();
+    }
+
+    /**
+     * Register the resolution registry (populated by providers) and the default
+     * Resolver used by the route ResolvePipe.
+     */
+    private function registerResolution(): void
+    {
+        $this->container->singleton(ResolutionRegistry::class, new ResolutionRegistry());
+        $this->container->bind(Resolver::class, TableResolver::class);
     }
 
     /**
