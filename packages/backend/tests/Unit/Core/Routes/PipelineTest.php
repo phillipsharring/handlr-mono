@@ -80,6 +80,38 @@ it('lay() is chainable', function () {
     expect($pipeline->lay(new ShortCircuitPipe($log)))->toBe($pipeline);
 });
 
+it('resolves a deferred pipe lazily when the chain reaches it', function () {
+    $log = [];
+    $built = 0;
+    $pipeline = (new Pipeline())
+        ->lay(new TracePipe('A', $log))
+        ->defer(function () use (&$built, &$log) {
+            $built++;
+            return new TracePipe('B', $log);
+        });
+
+    $pipeline->run(null, new Response(), []);
+
+    expect($built)->toBe(1)
+        ->and($log)->toBe(['A:before', 'B:before', 'B:after', 'A:after']);
+});
+
+it('never resolves a deferred pipe behind a short-circuit', function () {
+    $log = [];
+    $built = false;
+    $pipeline = (new Pipeline())
+        ->lay(new ShortCircuitPipe($log))
+        ->defer(function () use (&$built, &$log) {
+            $built = true;
+            return new TracePipe('deferred', $log);
+        });
+
+    $pipeline->run(null, new Response(), []);
+
+    expect($built)->toBeFalse()
+        ->and($log)->toBe(['short:handled']);
+});
+
 it('passes route args through to pipes', function () {
     $capturePipe = new class implements Pipe {
         public array $seen = [];

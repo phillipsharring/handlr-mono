@@ -30,11 +30,17 @@ use Handlr\Pipes\Pipe;
  */
 class Pipeline
 {
-    /** @var Pipe[] Pipes to execute in order */
+    /**
+     * Pipe resolvers, in execution order. Each entry is a thunk returning the
+     * Pipe. Eager pipes wrap an already-built instance; deferred pipes resolve
+     * lazily when (and only if) the chain reaches them.
+     *
+     * @var array<callable(): Pipe>
+     */
     private array $pipes = [];
 
     /**
-     * Add a pipe to the pipeline.
+     * Add an already-built pipe to the pipeline.
      *
      * Pipes are executed in the order they are added (first in, first to run).
      * Returns $this for method chaining.
@@ -50,7 +56,24 @@ class Pipeline
      */
     public function lay(Pipe $pipe): self
     {
-        $this->pipes[] = $pipe;
+        $this->pipes[] = static fn(): Pipe => $pipe;
+        return $this;
+    }
+
+    /**
+     * Add a lazily-resolved pipe.
+     *
+     * The resolver is invoked at most once, only when the chain actually reaches
+     * this link. A pipe upstream that short-circuits (never calls $next) means
+     * this resolver never runs — so the pipe is never constructed. This is how
+     * route handlers stay unbuilt until auth/policy pipes have cleared the way.
+     *
+     * @param callable(): Pipe $resolver Builds the pipe on demand.
+     * @return self Fluent interface
+     */
+    public function defer(callable $resolver): self
+    {
+        $this->pipes[] = $resolver;
         return $this;
     }
 
@@ -72,8 +95,8 @@ class Pipeline
     {
         $next = static fn($req, $res, $args) => $res;
 
-        foreach (array_reverse($this->pipes) as $pipe) {
-            $next = static fn($req, $res, $args) => $pipe->handle($req, $res, $args, $next);
+        foreach (array_reverse($this->pipes) as $resolve) {
+            $next = static fn($req, $res, $args) => $resolve()->handle($req, $res, $args, $next);
         }
 
         return $next($request, $response, $args);
