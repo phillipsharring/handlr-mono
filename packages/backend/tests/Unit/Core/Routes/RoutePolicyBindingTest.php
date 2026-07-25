@@ -217,3 +217,70 @@ it('leaves routes without a Resolves spec untouched (no resolve pipe runs)', fun
     expect(RpbHandler::$built)->toBeTrue()
         ->and(RpbHandler::$seen)->not->toBe('abc');
 });
+
+// ── Group-level resolves()/policy() defaults ──
+
+it('applies a group-level resolves()->policy() default to its routes', function () {
+    $router = new Router(rpbContainer(new RpbRecord(['id' => 'g1'])));
+    $router->group('/things')
+        ->resolves(RpbRecord::class)->policy(RpbAction::View)
+        ->get('/{id}', [RpbHandler::class])
+    ->end();
+
+    $router->dispatch(rpbRequest('/things/g1'), new Response());
+
+    expect(RpbHandler::$seen)->toBe('g1');
+});
+
+it('lets a per-route policy() override the group default', function () {
+    $router = new Router(rpbContainer(new RpbRecord(['id' => 'g2'])));
+    $router->group('/things')
+        ->resolves(RpbRecord::class)->policy(RpbAction::View)
+        ->get('/{id}', [RpbHandler::class])
+        ->get('/{id}/danger', [RpbHandler::class])
+            ->policy(RpbAction::Forbidden)
+    ->end();
+
+    // group-default route: granted
+    $router->dispatch(rpbRequest('/things/g2'), new Response());
+    expect(RpbHandler::$seen)->toBe('g2');
+
+    // overridden route: denied, handler never built
+    RpbHandler::$built = false;
+    expect(fn() => $router->dispatch(rpbRequest('/things/g2/danger'), new Response()))
+        ->toThrow(PolicyDenied::class);
+    expect(RpbHandler::$built)->toBeFalse();
+});
+
+it('still supports the per-route form inside a group (no group default)', function () {
+    $router = new Router(rpbContainer(new RpbRecord(['id' => 'g3'])));
+    $router->group('/things')
+        ->get('/{id}', [RpbHandler::class])
+            ->resolves(RpbRecord::class)->policy(RpbAction::View)
+    ->end();
+
+    $router->dispatch(rpbRequest('/things/g3'), new Response());
+
+    expect(RpbHandler::$seen)->toBe('g3');
+});
+
+it('inherits the group default into nested subgroups', function () {
+    $router = new Router(rpbContainer(new RpbRecord(['id' => 'g4'])));
+    $router->group('/things/{id}')
+        ->resolves(RpbRecord::class)->policy(RpbAction::View)
+        ->group('/items')
+            ->get('/sort', [RpbHandler::class])
+        ->end()
+    ->end();
+
+    $router->dispatch(rpbRequest('/things/g4/items/sort'), new Response());
+
+    expect(RpbHandler::$seen)->toBe('g4');
+});
+
+it('throws when policy() is called on a group before resolves()', function () {
+    $router = new Router(rpbContainer(new RpbRecord(['id' => 'x'])));
+
+    expect(fn() => $router->group('/things')->policy(RpbAction::View))
+        ->toThrow(RuntimeException::class, 'must follow resolves()');
+});
