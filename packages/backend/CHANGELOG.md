@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Added
+
+- **Group-level `resolves()` / `policy()`** — call them on a route group *before*
+  adding any route to set a default that every route in the group (and nested
+  groups) inherits, unless a route overrides with its own `->resolves()->policy()`.
+  The per-route fluent form is unchanged; the disambiguation is purely "has this
+  group added a route yet." Lets an object-scoped route tree declare its
+  resolve/policy once instead of repeating it on every route.
+
 ### Changed
 
 - **UUID binary↔string conversion is centralized in `Table`.** `Record` is now a
