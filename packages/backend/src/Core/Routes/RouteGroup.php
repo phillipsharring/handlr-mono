@@ -6,6 +6,7 @@ namespace Handlr\Core\Routes;
 
 use Handlr\Policies\PolicyAction;
 use Handlr\Resolution\Resolves;
+use RuntimeException;
 
 /**
  * Route group for organizing routes with shared prefixes and middleware.
@@ -56,6 +57,16 @@ final class RouteGroup
     private array $pipes;
 
     /**
+     * Group-level resolve/policy default, inherited by every route added to this
+     * group (and by nested groups) unless the route overrides it. Set by calling
+     * resolves()/policy() on the group *before* adding any route.
+     */
+    private ?Resolves $resolveDefault = null;
+
+    /** @var bool Whether a route has been registered directly on this group yet. */
+    private bool $hasAddedRoute = false;
+
+    /**
      * @param Router $router The router instance to register routes with
      * @param string $prefix URL prefix for this group
      * @param array<class-string|object> $pipes Pipes to apply to all routes
@@ -95,7 +106,10 @@ final class RouteGroup
     {
         $prefix = $this->joinPaths($this->prefix, $prefix);
         $pipes = array_merge($this->pipes, $pipes);
-        return new self($this->router, $prefix, $pipes, $this);
+        $child = new self($this->router, $prefix, $pipes, $this);
+        // Nested groups inherit this group's resolve/policy default.
+        $child->resolveDefault = $this->resolveDefault;
+        return $child;
     }
 
     /**
@@ -182,7 +196,8 @@ final class RouteGroup
      */
     public function get(string $path, array $pipes, ?Resolves $resolve = null): self
     {
-        $this->router->get($this->joinPaths($this->prefix, $path), array_merge($this->pipes, $pipes), $resolve);
+        $this->hasAddedRoute = true;
+        $this->router->get($this->joinPaths($this->prefix, $path), array_merge($this->pipes, $pipes), $resolve ?? $this->resolveDefault);
         return $this;
     }
 
@@ -198,7 +213,8 @@ final class RouteGroup
      */
     public function post(string $path, array $pipes, ?Resolves $resolve = null): self
     {
-        $this->router->post($this->joinPaths($this->prefix, $path), array_merge($this->pipes, $pipes), $resolve);
+        $this->hasAddedRoute = true;
+        $this->router->post($this->joinPaths($this->prefix, $path), array_merge($this->pipes, $pipes), $resolve ?? $this->resolveDefault);
         return $this;
     }
 
@@ -214,7 +230,8 @@ final class RouteGroup
      */
     public function patch(string $path, array $pipes, ?Resolves $resolve = null): self
     {
-        $this->router->patch($this->joinPaths($this->prefix, $path), array_merge($this->pipes, $pipes), $resolve);
+        $this->hasAddedRoute = true;
+        $this->router->patch($this->joinPaths($this->prefix, $path), array_merge($this->pipes, $pipes), $resolve ?? $this->resolveDefault);
         return $this;
     }
 
@@ -230,13 +247,16 @@ final class RouteGroup
      */
     public function delete(string $path, array $pipes, ?Resolves $resolve = null): self
     {
-        $this->router->delete($this->joinPaths($this->prefix, $path), array_merge($this->pipes, $pipes), $resolve);
+        $this->hasAddedRoute = true;
+        $this->router->delete($this->joinPaths($this->prefix, $path), array_merge($this->pipes, $pipes), $resolve ?? $this->resolveDefault);
         return $this;
     }
 
     /**
-     * Declare that the most recently registered route resolves a record.
-     * Fluent alternative to a Resolves spec; chain policy() to also authorize.
+     * Declare a resolve/policy binding. Called BEFORE any route in the group, it
+     * sets a group-level default inherited by every route in the group (and nested
+     * groups) unless overridden. Called AFTER a route, it attaches to that route.
+     * Chain policy() to also authorize.
      *
      * @param class-string $record The record type to resolve and bind.
      * @param string       $param  Route param holding the id (default 'id').
@@ -244,7 +264,14 @@ final class RouteGroup
      */
     public function resolves(string $record, string $param = 'id'): self
     {
-        $this->router->resolves($record, $param);
+        if ($this->hasAddedRoute) {
+            // A route was just declared on this group — attach to it (per-route).
+            $this->router->resolves($record, $param);
+        } else {
+            // No route yet — this is a group-level default inherited by the
+            // group's routes (and nested groups) unless they override it.
+            $this->resolveDefault = new Resolves($record, $this->resolveDefault?->action, $param);
+        }
         return $this;
     }
 
@@ -256,7 +283,14 @@ final class RouteGroup
      */
     public function policy(PolicyAction $action): self
     {
-        $this->router->policy($action);
+        if ($this->hasAddedRoute) {
+            $this->router->policy($action);
+        } else {
+            if ($this->resolveDefault === null) {
+                throw new RuntimeException('policy() on a group must follow resolves().');
+            }
+            $this->resolveDefault = new Resolves($this->resolveDefault->record, $action, $this->resolveDefault->param);
+        }
         return $this;
     }
 
