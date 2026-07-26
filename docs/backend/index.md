@@ -54,7 +54,7 @@ Read [Core Concepts](./concepts) for the full flow.
 | [Auth](./auth) | session auth + coarse permissions |
 | [Events & Listeners](./events) | the synchronous event bus |
 | [Service Providers](./service-providers) | how features register themselves |
-| [CLI & Makers](./cli) | `make:*`, `migrate`, `db:seed` |
+| [CLI & Makers](./cli) | `composer run make:*`, `migrate`, `seed` |
 
 ## Install
 

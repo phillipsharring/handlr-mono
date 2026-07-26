@@ -69,20 +69,22 @@ DB_PASSWORD=""
 
 ## First run
 
-```bash
-# backend — create the schema and serve
-cd backend
-php vendor/bin/handlr migrate up        # run migrations
-php -S localhost:8000 -t public         # or your preferred server
+Everything is driven by composer/npm scripts — there is no `handlr` binary.
 
-# frontend — dev server with live-baked pages
-cd ../frontend
-npm run dev
+```bash
+# backend — create the schema, then serve the API
+cd backend
+composer run migrate       # run the next migration batch (composer run fresh = migrate:fresh + seed:fresh)
+composer run dev           # PHP server on http://localhost:8000
+
+# frontend — dev server with live-baked pages (in a second terminal)
+cd frontend
+npm run dev                # Vite on http://localhost:5173, proxies /api to :8000
 ```
 
 The frontend dev server ([handlr-build](/frontend/build)'s Vite plugin) renders pages
-on the fly; the backend serves the API. Point the frontend at the backend's URL in
-your dev config.
+on the fly and proxies `/api` to the backend, so the two halves run side by side. See
+[CLI & Makers](/backend/cli) for the full command list.
 
 ## Next
 

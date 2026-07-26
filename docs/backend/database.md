@@ -44,8 +44,7 @@ final class ChecklistRecord extends Record
 > [!WARNING] Never declare real public properties for columns
 > A real `public ?string $name = null;` **shadows** the `__get`/`__set` magic, so the
 > value never reaches `$data` — and `update()` / `toPersistableArray()` silently drop
-> it. Use `@property` docblocks only. (See the reuselists CLAUDE.md note; this is the
-> single most common Record mistake.)
+> it. Use `@property` docblocks only — this is the single most common Record mistake.
 
 Useful methods: `toArray()` (pk + data, for API output), `toPersistableArray()` (pk +
 data minus computed columns — what `insert`/`update` write), `usesUuid()`,
@@ -99,8 +98,8 @@ $table->update($record);         // affected rows; excludes pk + updated_at; thr
 $table->delete($record);         // hard delete; affected rows
 ```
 
-For soft delete, keep a `deleted_at` column and set it via `update()` (as reuselists
-does for checklists) rather than `delete()`.
+For soft delete, keep a `deleted_at` column and set it via `update()` rather than
+`delete()`.
 
 ### Conditions DSL
 
@@ -158,4 +157,4 @@ Both are driven from the CLI — see [CLI & Makers](./cli).
 ## See also
 
 - [Authorization](./authorization) — `Table` + `Record` are what resolution loads.
-- [CLI & Makers](./cli) — `make:record`, `make:table`, `make:migration`, `migrate`, `db:seed`.
+- [CLI & Makers](./cli) — `make:record`, `make:table`, `make:migration`, `migrate`, `seed`.

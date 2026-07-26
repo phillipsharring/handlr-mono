@@ -23,19 +23,21 @@ provider** fills them.
 
 ## 1. Generate the pieces
 
-Use the [makers](/backend/cli) to scaffold a record, a table, and an endpoint:
+Use the [makers](/backend/cli) to scaffold a record, a table, and an endpoint. These
+are composer scripts — run them from `backend/`:
 
 ```bash
-php vendor/bin/handlr make:record WidgetRecord
-php vendor/bin/handlr make:table WidgetsTable
-php vendor/bin/handlr make:migration create_widgets_table
-php vendor/bin/handlr make:scaffold ListWidgets          # Input + Handler + Pipe + Test
+cd backend
+composer run make:record WidgetRecord
+composer run make:table WidgetsTable
+composer run make:migration create_widgets_table
+composer run make:scaffold ListWidgets          # Input + Handler + Pipe + Test
 ```
 
 Fill in the migration and run it:
 
 ```bash
-php vendor/bin/handlr migrate up
+composer run migrate
 ```
 
 ## 2. The flow, end to end
@@ -126,10 +128,10 @@ open the page.
 
 ## 5. Run the tests
 
-`make:scaffold` generated a test alongside the pipe. Run the suite with Pest:
+`make:scaffold` generated a test alongside the pipe. Run the suite:
 
 ```bash
-php vendor/bin/pest
+composer run test        # from backend/ — Pest under the hood
 ```
 
 ## Where to go next
