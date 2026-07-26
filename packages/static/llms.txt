@@ -1,0 +1,88 @@
+# create-handlr-static
+
+> Scaffold a purely static Handlr site — Vite + Tailwind + custom HTML components
+> compiled to static HTML by handlr-build. No PHP backend, no HTMX runtime, no
+> client-side state. Just layouts, components, pages, and Tailwind. This file orients
+> an AI or a developer building one: how to run it, and how the templating works.
+
+npm package `@phillipsharring/create-handlr-static`. Scaffold a new site:
+
+```bash
+npm create @phillipsharring/handlr-static my-site
+cd my-site
+npm run dev
+```
+
+The installer (`bin/create.mjs`) copies the bundled `skeleton/` into your target dir and
+runs `npm install`. That's the whole thing — a static site with hot reload in dev and a
+compiled `dist/` for production.
+
+## The one engine underneath (read this next)
+
+This skeleton is powered entirely by **handlr-build**. Its `llms.txt` is the
+authoritative reference for the templating model, config, and output:
+
+- Build tooling: [../build/llms.txt](../build/llms.txt)
+- Prose docs: https://handlr.dev/frontend/build
+
+There is **no** backend or frontend-runtime package here — if you find yourself needing
+auth, forms, modals, or API calls, you've outgrown static (see "Graduating" below).
+
+## Commands
+
+```bash
+npm run dev       # Vite dev server, pages baked on the fly
+npm run build     # vite build && handlr-build-pages → dist/
+npm run preview   # preview the built dist/
+```
+
+## Directory layout
+
+```
+my-site/
+├── content/
+│   ├── layouts/base.html        # the HTML shell with [[app]], [[title]], [[pageHead]] slots
+│   ├── components/callout.html  # reusable custom-tag templates (<callout>, …)
+│   └── pages/                   # one HTML file per route (index.html → /, about.html → /about/)
+├── public/                      # static assets copied as-is
+├── src/
+│   ├── app.js                   # Vite entry (imports the CSS)
+│   └── styles/style.css         # Tailwind v4
+├── site.config.js               # [[placeholders]] (siteName, copyright, …) + optional modules
+└── vite.config.js               # tailwind + handlr-build dev plugin
+```
+
+## Authoring model (brief — full detail in the build llms.txt)
+
+A **page** is a body plus optional leading directives:
+
+```html
+<layout name="base" title="About" />
+<page-head><meta name="description" content="About us." /></page-head>
+
+<h1>About</h1>
+<callout type="info">We build tools.</callout>
+```
+
+- `<layout name="…" />` picks `content/layouts/<name>.html` (default `base`); the body
+  fills its `[[app]]` slot, `<page-head>` fills `[[pageHead]]`.
+- **Layout placeholders**: `[[app]]`, `[[title]]`, `[[cssHref]]`, `[[jsSrc]]`,
+  `[[pageHead]]`, `[[gitSha]]`, and `[[<anyKey>]]` for every `site.config.js` key.
+- **Components** (`content/components/<name>.html`): invoke as `<callout>` (single-word
+  tag matching a file), `<my-thing>` (hyphenated), or `<component name="…"/>`. Inside:
+  `[[prop]]` (escaped), `[[{prop}]]` (raw), `[[slot]]`, `[[#if flag]]…[[else]]…[[/if]]`.
+- **Routing** is file-based: `content/pages/about.html` → `/about/`. Bracketed segments
+  (`[slug].html`) are dynamic. Files prefixed `_` are skipped.
+- `flatRoutes` / `minify` / `devCss` are set once in `site.config.js`.
+
+## Graduating to a full app
+
+Static covers content sites (marketing, docs, landing pages). The moment you need a
+backend, auth, forms, modals, or live data, scaffold the full-stack skeleton instead —
+same build model, plus the PHP framework and the HTMX runtime:
+
+```bash
+composer create-project phillipsharring/handlr-app my-app
+```
+
+See [../app/llms.txt](../app/llms.txt).

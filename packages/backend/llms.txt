@@ -74,7 +74,7 @@ and are worth internalizing before reading source:
 
 - [Core/ServiceProvider.php](src/Core/ServiceProvider.php): `register()` (bind only) → `boot()` (wire) → `routes(Router)` / `events(): array` / `migrationPaths()` / `seedPaths()` / `configDefaults()`. [ServiceProviderRegistry.php](src/Core/ServiceProviderRegistry.php) drives the lifecycle for both web + CLI.
 - [Core/EventManager.php](src/Core/EventManager.php): `register(name, Handler)` + `dispatch(name, input)`. Listeners are ordinary Handlers returning `null`.
-- [scripts/](scripts/): Symfony Console entrypoints — `make.php` (`make:*` scaffolders, see [Generator/](src/Generator/)), `migrate.php` (`migrate up|down|rollback|fresh`), `seed.php` (`db:seed`), `module.php` (`module:install`).
+- [scripts/](scripts/): Symfony Console entrypoints — `make.php` (`make:*` scaffolders, see [Generator/](src/Generator/)), `migrate.php` (`up|down|rollback|fresh`), `seed.php`, `module.php`. **There is no global `handlr` bin.** The app skeleton exposes these as **composer scripts** in `backend/composer.json` that call the vendored scripts, so from a scaffolded app you run `composer run <name>` in `backend/`, e.g. `composer run migrate`, `composer run migrate:fresh`, `composer run seed`, `composer run make:record`, `composer run make:pipe`, `composer run make:scaffold`, `composer run module:install -- <name>`. See [handlr-app](../app/llms.txt) for the full command list.
 
 ## Other subsystems
 

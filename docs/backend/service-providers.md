@@ -81,7 +81,7 @@ the offending provider, not just the path.
 
 Add the provider class to your app config's provider list. The `ServiceProviderRegistry`
 (`src/Core/ServiceProviderRegistry.php`) drives the lifecycle for both the web Kernel
-and the CLI scripts — so `migrate` and `db:seed` see the same providers (and their
+and the CLI scripts — so `migrate` and `seed` see the same providers (and their
 `migrationPaths()`/`seedPaths()`) that the web app does.
 
 ## Building a modular feature

@@ -1,0 +1,174 @@
+# handlr-app
+
+> The full-stack Handlr app skeleton — the starting point for a server-driven web app:
+> an HTMX + Handlebars + Tailwind frontend over a PHP Pipe + Handler backend. Scaffold
+> it, then build features by dropping a service provider into a domain folder. This
+> file orients an AI or a developer building on it: what goes where, and how to run it.
+
+Composer package `phillipsharring/handlr-app`. Scaffold a new project:
+
+```bash
+composer create-project phillipsharring/handlr-app my-app
+# a post-create hook runs `npm install` in the frontend half
+```
+
+The result is **two sibling halves** in one repo — `backend/` (composer) and
+`frontend/` (npm) — talking over HTTP. Run them side by side:
+
+```bash
+cd backend  && composer run dev   # PHP API on http://localhost:8000
+cd frontend && npm run dev        # Vite on http://localhost:5173, proxies /api → :8000
+```
+
+## The packages under this skeleton (read these next)
+
+Each package ships its own `llms.txt` — the authoritative map for that layer:
+
+- Backend framework (Pipe/Handler, routing, authorization, DB): [../backend/llms.txt](../backend/llms.txt)
+- Frontend runtime (HTMX toolkit, declarative behavior, modals/toasts): [../frontend/llms.txt](../frontend/llms.txt)
+- Build tooling (pages/layouts/components → static HTML): [../build/llms.txt](../build/llms.txt)
+
+Full prose docs: https://handlr.dev/
+
+## Commands (composer scripts — there is no `handlr` binary)
+
+Run from `backend/`. These are wired in `backend/composer.json` and call the vendored
+framework scripts:
+
+| Command | Does |
+|---|---|
+| `composer run dev` | serve the API (`php -S localhost:8000 -t public`) |
+| `composer run test` | run the Pest suite |
+| `composer run migrate` | run the next migration batch |
+| `composer run migrate:fresh` | drop everything and re-run migrations |
+| `composer run seed` / `seed:fresh` | seed (optionally truncate first) |
+| `composer run fresh` | `migrate:fresh && seed:fresh` — reset the dev DB |
+| `composer run make:record\|table\|handler\|pipe\|scaffold` | scaffold a piece (args forwarded) |
+| `composer run make:migration <name>` / `make:seed <name>` | scaffold schema/seed |
+| `composer run module:install -- <name>` | install both halves of a module |
+
+Frontend (`npm run` in `frontend/`): `dev`, `build`, `preview`.
+
+## Directory layout
+
+```
+my-app/
+├── backend/
+│   ├── app/
+│   │   ├── routes.php          # declares the cross-cutting JUNCTIONS once (CORS/session/CSRF/auth)
+│   │   ├── config.php          # app config + the `providers` list (this is the wiring)
+│   │   └── <Domain>/           # one folder per feature domain, each with a ServiceProvider
+│   ├── bootstrap.php           # locates the app root, boots the Kernel
+│   ├── migrations/             # {timestamp}_{desc}.php
+│   ├── seeds/                  # seed files
+│   ├── public/index.php        # web entrypoint
+│   ├── resources/views/        # server-side PHP views (for straight-HTMX / ViewPipe)
+│   └── composer.json           # the command surface above
+└── frontend/
+    ├── content/{layouts,components,pages}/   # the HTML the build compiles
+    ├── src/app.js              # entry: imports htmx + `/init`, registers helpers, builds window.App
+    ├── src/namespace.js        # assembles window.App from handlr-frontend exports
+    ├── modules/                # local frontend modules (each a dir with a module.js)
+    ├── site.config.js          # [[placeholders]] + the `modules` list
+    └── vite.config.js          # tailwind + the handlr-build dev plugin
+```
+
+The skeleton ships with `Auth` (login/signup/password-reset/email-verify, RBAC) and
+`Profile` domains already built — read them as worked examples.
+
+## Building a feature — where things go
+
+The one hard rule: a feature is a **service provider** listed in `app/config.php`'s
+`providers` array. It ties routes, events, migrations, and bindings into the framework.
+Everything else below is the **recommended** convention (the shipped `Auth` and
+`Profile` domains follow it), **not dictated** — see "Layout is a suggestion."
+
+A domain folder groups a feature's pieces. For example, a `Checklists` domain
+(illustrating the handlr 0.15 `resolves()->policy()` flow):
+
+```
+backend/app/Checklists/
+├── ChecklistsServiceProvider.php     # routes(), events(), boot() registers resolution
+├── Domain/
+│   ├── ChecklistRecord.php           # the Record (@property docblocks over $data)
+│   ├── ChecklistPolicy.php           # object-level authorization (consult → Grant/Deny)
+│   └── ChecklistAction.php           # enum ChecklistAction implements PolicyAction
+├── Data/
+│   ├── ChecklistsTable.php           # the Table gateway
+│   └── ChecklistsQuery.php           # custom read SQL (ownership checks, etc.)
+├── Inputs/ChecklistInput.php         # validated HandlerInput (validateForCreate/Update)
+├── UpdateChecklist/
+│   ├── PatchUpdateChecklist.php      # the Pipe (HTTP: build input, guard, call handler)
+│   └── UpdateChecklistHandler.php    # the Handler (pure logic, no HTTP)
+├── Items/ …                          # more feature folders (one per endpoint group)
+└── Listeners/ …                      # event listeners (Handlers on an event name)
+```
+
+"Build me a pipe that does X" resolves to:
+
+| Piece | Where | Registered by |
+|---|---|---|
+| Endpoint (Pipe + Handler + Input) | `app/<Domain>/<Feature>/` | `provider->routes()` attaches the Pipe into a junction |
+| Persistent shape | `app/<Domain>/Domain/<X>Record.php` + `Data/<X>Table.php` | used by handlers; resolution via `ResolutionRegistry` in `boot()` |
+| Object authorization | `app/<Domain>/Domain/<X>Policy.php` + `<X>Action.php` | `->resolves(XRecord::class)->policy(XAction::Edit)` on the route |
+| Reaction to something | `app/<Domain>/Listeners/<X>Listener.php` | `provider->events()` map |
+| The whole feature | `app/<Domain>/<Domain>ServiceProvider.php` | added to `app/config.php` `providers` |
+
+A route attaches to a **junction** declared in `app/routes.php` — `api.authed`,
+`api.admin`, etc. — so a provider inherits the session/CSRF/auth stack without
+redeclaring it:
+
+```php
+public function routes(Router $router): void
+{
+    $router->intoJunction('api.authed')
+        ->group('/widgets/{id:uuid}')
+            ->resolves(WidgetRecord::class)->policy(WidgetAction::View)   // group default
+            ->get('', [GetWidget::class])
+            ->patch('', [UpdateWidget::class])->policy(WidgetAction::Edit)
+        ->end();
+}
+```
+
+The resolve pipe loads the record, consults the policy, and injects the record into the
+handler by type hint — so an unauthorized request never reaches your code. See the
+[backend authorization docs](https://handlr.dev/backend/authorization).
+
+## Layout is a suggestion, not a mandate
+
+The DDD-ish domain grouping above is one way. The framework does **not** dictate folder
+structure — the only requirement is a registered service provider. Organizing by *type*
+of thing works just as well:
+
+```
+backend/app/
+├── Db/Records/ , Db/Tables/
+├── Pipes/ , Handlers/ , Listeners/ , Policies/ , Inputs/
+└── WidgetsServiceProvider.php
+```
+
+The pieces (Pipe, Handler, Record, Table, Policy, Listener) are intentionally granular —
+they compose in an opinionated way, but where you *put* them is up to the team. Pick a
+convention and keep it consistent; the domain-folder layout is recommended mainly
+because it keeps a feature's files together and makes a provider easy to find.
+
+## The frontend side of a feature
+
+A page is an HTML file in `frontend/content/pages/` that renders the API via a
+Handlebars `<template>`; auth-gated content uses `data-requires-auth` +
+`hx-trigger="auth-load"`. `src/app.js` wires the runtime (`/init`) and builds
+`window.App` (from `src/namespace.js`) so inline scripts can call
+`App.ui.openFormModal(...)`, `App.ui.toast.show(...)`, etc. See the
+[frontend docs](https://handlr.dev/frontend/) and [../frontend/llms.txt](../frontend/llms.txt).
+
+## Worked examples to learn from
+
+The best references are the domains this skeleton ships with — read them, they follow
+every convention above:
+
+- **`app/Auth/`** — login, signup, password reset, email verification, RBAC. Shows the
+  domain layout at scale (`Data/`, `Domain/`, feature folders, `Listeners/`, events).
+- **`app/Profile/`** — a smaller domain: pipes + handlers + one input + a provider.
+
+When in doubt, mirror those and the routing/authorization patterns in the
+[docs](https://handlr.dev/) and the [backend llms.txt](../backend/llms.txt).

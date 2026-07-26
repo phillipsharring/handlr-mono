@@ -30,7 +30,7 @@ A dual-published module is one version number across two registries. The
 both halves at the matching version:
 
 ```bash
-php vendor/bin/handlr module:install widgets
+cd backend && composer run module:install -- widgets
 ```
 
 It installs the composer package and its npm counterpart, but does **not** auto-register
