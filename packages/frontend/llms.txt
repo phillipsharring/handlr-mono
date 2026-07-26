@@ -1,0 +1,82 @@
+# handlr-frontend
+
+> A composable HTMX toolkit (HTMX + Handlebars + Tailwind) for server-driven apps.
+> It is a **toolkit, not a framework**: apps call it, it does not call apps. The
+> barrel (`.`) is pure side-effect-free exports; `./init` is the opt-in batteries
+> that wire the delegated listeners.
+
+npm package `@phillipsharring/handlr-frontend`. Peer deps: `handlebars@^4.7`,
+`htmx.org@^2.0`, `sortablejs@^1.15`. ESM. See ADR 0002 (toolkit stance) and ADR 0003
+(declarative behavior layer) in `../../docs/adr/`.
+
+Two things to internalize first:
+
+- **Two-entry contract.** `import '@phillipsharring/handlr-frontend'` runs nothing
+  — take only the exports you call (tree-shakeable). `import '@phillipsharring/handlr-frontend/init'`
+  turns on the defaults (csrf, boosted-nav, auth-state, forms, search, sortable,
+  hooks, and the declarative layer). New capability ⇒ a named export or explicit
+  `initX()`, never a module that self-registers at import from the barrel.
+- **The package sets exactly one global: `window.htmx`.** It does *not* create
+  `window.App` — the consuming app builds that namespace and hangs chosen exports
+  on it (`App.ui.openFormModal`, `App.ui.toast.show`, `App.getRouteParams`, …). The
+  named-action registry is deliberately module-scoped, not on `window.App`.
+
+## Entry points
+
+- [src/index.js](src/index.js): the barrel — re-exports only, zero side effects.
+- [src/init.js](src/init.js): batteries — imports the self-registering modules for side effects, then calls `initActions()`, `initFormResponses()`, `initAuthFlows()`.
+
+## Declarative behavior layer (ADR 0003)
+
+One delegated `document.body` listener per event type; survives boosted-nav swaps.
+
+- [core/delegation.js](src/core/delegation.js): `onEvent(type, selector, handler)`, `onClick`, `onHtmx` — the escape hatches everything is built on.
+- [core/actions.js](src/core/actions.js): named-action registry. `data-action="name"` → registered handler. `registerAction/onAction`, `runAction`, `initActions()`. Built-ins: `toggle` (`data-target`, flips `hidden` + `aria-expanded`), `copy` (`data-copy`, fires `handlr:copied`).
+- [core/form-response.js](src/core/form-response.js): post-2xx UI branching. `data-on-success` / `data-on-error` take one verb: `redirect`, `reveal:#sel`, `toast:Message`, `action:name`. Imperative escape hatches `onFormSuccess/onFormError`.
+- [core/auth-flows.js](src/core/auth-flows.js): `logoutAction` + `initAuthFlows()`; use `data-action="logout"` (login/signup/reset reuse the form-response verbs).
+
+## Lifecycle hooks
+
+- [src/hooks.js](src/hooks.js): `onPageLoad(fn)` (DOMContentLoaded, fires immediately if already loaded), `onAfterSwap(fn)`, `onAfterSettle(fn)`, `onHistoryRestore(fn)`. Each fires only when the swap target is `#app` — needed because boosted nav replaces everything inside `#app` per swap.
+
+## Auth, CSRF, fetch
+
+- [src/auth.js](src/auth.js): `checkAuth()`, `getAuthData()` (one cached `GET /api/auth/me`), `refreshAuthData()`.
+- [core/auth-state.js](src/core/auth-state.js): auth-gated UI — `data-auth-login/-logout`, `data-show-if-auth`, `data-requires-auth` (fires `auth-load`), `data-requires-permission`, admin gating, login modal, 401/403 interception. `registerAdminPermissionPrefixes([[prefix, perm]])`.
+- [core/csrf.js](src/core/csrf.js): token in `XSRF-TOKEN` cookie, sent as `X-CSRF-Token`. Patches `window.fetch` + `htmx:configRequest` for `/api/` requests. `getCsrfToken()`.
+- [src/fetch-client.js](src/fetch-client.js): `apiFetch(url, opts)` — CSRF header, JSON encode, same-origin, captures rotated token.
+
+## Server-driven rendering
+
+- [core/boosted-nav.js](src/core/boosted-nav.js): infrastructure for `hx-boost` + `hx-select="#app"` (target fixups, title preservation, layout-mismatch full loads). `isBoostedPageNav(el)`.
+- [lib/htmx.js](src/lib/htmx.js): imports htmx, sets the single shared `window.htmx`.
+- [lib/json-enc.js](src/lib/json-enc.js): htmx `json-enc` extension — JSON-encodes non-GET requests.
+- [lib/client-side-templates.js](src/lib/client-side-templates.js): htmx `client-side-templates` extension — renders JSON responses through a `[handlebars-template]` / `[handlebars-array-template]` `<template>`. Array form = `{ data: rows, meta }`; stashes `meta.table_sorts`; can render pagination.
+
+## Interaction modules (`core/`)
+
+- [forms.js](src/core/forms.js): inline field errors (`data-form-errors="inline"`), modal auto-open/close-on-success, `data-refresh-target`/`-event`.
+- [search.js](src/core/search.js): debounced `[data-search-target]` inputs (UUID → `?id=`, else `?search=`).
+- [sortable.js](src/core/sortable.js): SortableJS on `[data-sortable]`, PATCHes new order.
+- [navigation.js](src/core/navigation.js): active-nav, `setUrlParam/getUrlParam`, `mergeHxVals`.
+- [pagination.js](src/core/pagination.js): `initPagination()`, `data-action="paginate-*"`.
+- [table-sort.js](src/core/table-sort.js): `initTableSort()`, clickable `th[data-sort]`.
+
+## UI (`ui/`)
+
+- [ui/modal.js](src/ui/modal.js): global modal (`#global-modal`) — `openGlobalModal/closeGlobalModal`, focus + scroll management, `modal:closed` event.
+- [ui/modal-form.js](src/ui/modal-form.js): `openFormModal({ templateId, title, size, fields, formUrl, formMethod, ... })` — renders a `<template>` (Handlebars-compiled for partials) into the modal and wires the form.
+- [ui/confirm-dialog.js](src/ui/confirm-dialog.js): `HandlrConfirm.open({message, onConfirm})` + declarative `[data-confirm]` / `data-confirm-*` (message, request-url/method, refresh-target, progress loop, checkbox).
+- [ui/toast.js](src/ui/toast.js): `HandlrToast.show({ message, status })`, `registerToastHelpers`, auto-open on swap into `#global-toast-content`.
+- [ui/typeahead.js](src/ui/typeahead.js): `createTypeahead({ input, dropdown, onSelect, ... })`. [ui/click-burst.js](src/ui/click-burst.js), [ui/image-preview.js](src/ui/image-preview.js).
+
+## Helpers
+
+- [helpers/handlebars-helpers.js](src/helpers/handlebars-helpers.js): `registerHandlebarsHelpers(Handlebars)` — partials `formButtons`, `copyIdBtn`; helpers `eq/neq/and/or/truncate/upper/humanize/timeAgo/formatDateTime` (all datetime helpers parse values as UTC → local).
+- [helpers/](src/helpers/): `debounce`, `scrubSearchInput`, `escapeHtml`, `populateSelect`, `getRouteParams`, `initCopyIdHandler`.
+
+## Docs
+
+- Runtime guide: https://handlr.dev/frontend/runtime
+- Declarative behavior, UI, CSRF, auth-state: https://handlr.dev/frontend/
+- ADRs 0002 (toolkit) and 0003 (declarative layer): `../../docs/adr/`.
