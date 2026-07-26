@@ -73,6 +73,9 @@ class Response
     /** @var int 404 - Resource not found */
     public const int HTTP_NOT_FOUND = 404;
 
+    /** @var int 409 - Conflict (request conflicts with current resource state) */
+    public const int HTTP_CONFLICT = 409;
+
     /** @var int 422 - Validation failed (use for form/input validation errors) */
     public const int HTTP_UNPROCESSABLE_ENTITY = 422;
 
