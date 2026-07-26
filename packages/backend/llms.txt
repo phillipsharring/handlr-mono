@@ -1,0 +1,92 @@
+# handlr-backend
+
+> A lightweight, middleware-style ("pipe") PHP framework. The request path is
+> DI container → router → per-request container scope → pipeline of pipes →
+> handler. Object-level authorization (resolve → policy → bind) is a first-class
+> layer, not a convention you remember to apply.
+
+Composer package `phillipsharring/handlr-backend`, namespace `Handlr\`, PSR-4 root
+`src/`, PHP >= 8.4. Deps: `psr/log`, `vlucas/phpdotenv`, `ramsey/uuid`,
+`adbario/php-dot-notation`, `symfony/console|filesystem|process`; optional
+`aws/aws-sdk-php` for SES. Tests use Pest.
+
+The design bias is **explicit over magic**: constructor injection everywhere, no
+static global state, abstractions you can read top to bottom. Two rules load-bear
+and are worth internalizing before reading source:
+
+- **Laziness.** Route pipes and the handler are `defer()`'d — resolved only when the
+  chain reaches them. An auth / policy / CSRF short-circuit means downstream pipes
+  and the handler are *never constructed*.
+- **Scope binding is the injection mechanism.** `Router::dispatch()` opens a
+  per-request `Container::scope()`. Any pipe can `$scope->singleton(Type::class, $x)`;
+  because the child scope autowires *through* itself, a handler type-hinting `Type`
+  receives that instance. This is how a resolved+authorized record reaches a handler.
+
+## Request lifecycle
+
+- [Core/Kernel.php](src/Core/Kernel.php): boot singleton — registers services (Logger, Db, Session, Mailer, ResolutionRegistry + Resolver), adds global pipes (ErrorPipe, LogPipe), then boots providers → loads `app/routes.php` (declares junctions) → applies provider routes (fills them).
+- [Core/Routes/Router.php](src/Core/Routes/Router.php): `dispatch()` matches the route, opens a request scope, `lay()`s global pipes, `defer()`s route pipes through the scope, injects a `ResolvePipe` before the handler when the route has a `Resolves` spec.
+- [Core/Routes/Pipeline.php](src/Core/Routes/Pipeline.php): the onion. `lay(Pipe)` = built instance; `defer(fn(): Pipe)` = lazy link; `run()` folds them into a nested `$next` chain.
+- [Pipes/Pipe.php](src/Pipes/Pipe.php): the contract — `handle(Request, Response, array $args, callable $next): Response`. Return `$next(...)` to continue or a `Response` to short-circuit.
+- [Core/Request.php](src/Core/Request.php), [Core/Response.php](src/Core/Response.php): immutable HTTP value objects (`Response` has `HTTP_*` constants + `withJson/withHtml/withRedirect`).
+- [Core/RequestException.php](src/Core/RequestException.php): base HTTP exception (message + status). `ErrorPipe` renders any subclass at its status — this is why `RecordNotFound` (404) / `PolicyDenied` (403) need no per-route wiring.
+
+## Dependency injection
+
+- [Core/Container/Container.php](src/Core/Container/Container.php): autowiring container. `bind/singleton/factory/alias/get/has`. `has()` is true only for *explicit* registrations (read-through to parent) — the key to scope delegation. Convention hooks: setter `inject(...)`, no-arg `init()`.
+- `scope()`: request-lifetime child. Shared services resolve from the parent; anything bound locally (or built locally) resolves through the child, so scope-bound instances reach constructors. See `tests/Unit/Core/Container/ContainerScopeTest.php`.
+
+## Routing & junctions
+
+- [Core/Routes/RouteGroup.php](src/Core/Routes/RouteGroup.php): `group()`, `through()`, `get/post/patch/delete()`, `end()`. Params `{id}`, `{id:int}`, `{id:uuid}`, `{slug:slug}`, `{x:regex}`. A param may live in a group prefix (`->group('/{id:uuid}')`).
+- **Junctions**: `->junction('api.authed')` labels a group as an extension point; a provider fills it with `$router->intoJunction('api.authed')->...`, inheriting its prefix + pipe stack. Declare the cross-cutting stacks (CORS/session/CSRF/auth) once in `app/routes.php`.
+- **Resolve/policy binding**: `->resolves(RecordClass)->policy(Action)` per route, or on a *group before its first route* as an inherited default. See `tests/Unit/Core/Routes/RoutePolicyBindingTest.php`.
+
+## Authorization (ADR 0004) — resolve → consult → bind
+
+- [Resolution/Resolves.php](src/Resolution/Resolves.php): route metadata VO `(record, ?action, param='id')`.
+- [Resolution/ResolutionRegistry.php](src/Resolution/ResolutionRegistry.php): `for(Record, Table, ?Policy)` map, populated in a provider `boot()`.
+- [Resolution/Resolver.php](src/Resolution/Resolver.php) + [TableResolver.php](src/Resolution/TableResolver.php): `resolve(Table, id): Record` (findById-or-throw `RecordNotFound`). No auth, no state filtering.
+- [Resolution/ResolvePipe.php](src/Resolution/ResolvePipe.php): the orchestrator — lookup binding → resolve record → if action set, `$policy->consult($actor, $action, $record)->orDeny()` → `$scope->singleton(RecordClass, $record)` for the handler.
+- [Policies/Policy.php](src/Policies/Policy.php): `consult(AuthContext, PolicyAction, object): Decision`. One policy per resource type, action-dispatched. [PolicyAction.php](src/Policies/PolicyAction.php) is a marker for a per-domain enum. [Decision.php](src/Policies/Decision.php): `grant()/deny(?reason)/orDeny($status=403)`. `PolicyDenied` = 403.
+- [Invariants/Invariant.php](src/Invariants/Invariant.php): `check(): ?Violation` — request-time preconditions (quotas, state), one class per rule. Distinct from domain invariants (which live in the aggregate).
+
+## Data
+
+- [Database/Table.php](src/Database/Table.php): table gateway, `@template T of Record`. `findById/findFirst/findWhere/paginate/count`, `insert/insertMany/update/delete`, and `hydrate(row)` (decodes BINARY(16) UUIDs — use it, not `new Record($row)`). Conditions DSL + `IN/BETWEEN/LIKE/NULL`, indexed `orderBy`.
+- [Database/Record.php](src/Database/Record.php): active record. **`__get`/`__set` magic over `$data`** — never declare real public props for columns (they shadow the magic and break `update()`). `$uuidColumns`, `$casts`, `$computed`, UUIDv7 auto-id, `toPersistableArray()`.
+- [Database/Db.php](src/Database/Db.php): PDO wrapper (`execute`, `uuidToBin/binToUuid`, transactions). [Query.php](src/Database/Query.php): base for custom SQL (`rows/row/scalar/count`).
+- [Database/Migrations/](src/Database/Migrations/): `MigrationRunner`, `BaseMigration`, `Seeder`.
+
+## Handlers, validation, responses
+
+- [Handlers/Handler.php](src/Handlers/Handler.php): `handle(array|HandlerInput): ?HandlerResult` — HTTP-agnostic business logic, reused for HTTP *and* events. [HandlerResult.php](src/Handlers/HandlerResult.php): `ok($data,$meta)/fail($errors,$meta)`. [ValidatedInputFactory.php](src/Handlers/ValidatedInputFactory.php): the Pipe→Handler validation seam (route params + JSON body + server extras → validated typed input).
+- [Validation/Validator.php](src/Validation/Validator.php): rule engine, `rule|arg1,arg2` syntax (pipe, not colon). Rules + sanitizers under `Validation/Rules` and `Validation/Sanitizers`; `ValidatesRules` trait for input classes; `OutputSanitizer` (static) for render-time escaping.
+- [Api/Presenter.php](src/Api/Presenter.php): the JSON envelope. `withData/withSingleData/fromRecord/withMeta/only/without` then terminal `success/warning/validationError/invariantError`.
+
+## Auth, sessions, CSRF
+
+- [Auth/Pipes/](src/Auth/Pipes/): `StartSessionPipe`, `SessionAuthPipe` (session → `AuthContext`), `RequireAuthPipe` (401 JSON, never redirects), `RequirePermissionPipe` / `RequireAllPermissionsPipe` (coarse RBAC). Object-level auth is Policy, not these.
+- [Csrf/](src/Csrf/): `CsrfService` (session token), `EnsureCsrfTokenPipe` (mirrors token to `XSRF-TOKEN` cookie + `X-CSRF-Token` header), `VerifyCsrfTokenPipe` (validates header, rotates after), `VerifyOriginPipe`, `CorsPipe` (same-origin).
+- [Session/](src/Session/): `SessionInterface`, `Session`, `DatabaseSessionDriver` (DB-backed, wired by the Kernel).
+
+## Providers, events, CLI
+
+- [Core/ServiceProvider.php](src/Core/ServiceProvider.php): `register()` (bind only) → `boot()` (wire) → `routes(Router)` / `events(): array` / `migrationPaths()` / `seedPaths()` / `configDefaults()`. [ServiceProviderRegistry.php](src/Core/ServiceProviderRegistry.php) drives the lifecycle for both web + CLI.
+- [Core/EventManager.php](src/Core/EventManager.php): `register(name, Handler)` + `dispatch(name, input)`. Listeners are ordinary Handlers returning `null`.
+- [scripts/](scripts/): Symfony Console entrypoints — `make.php` (`make:*` scaffolders, see [Generator/](src/Generator/)), `migrate.php` (`migrate up|down|rollback|fresh`), `seed.php` (`db:seed`), `module.php` (`module:install`).
+
+## Other subsystems
+
+- [Config/](src/Config/): dot-notation config over `.env` + a PHP config file.
+- [Mail/](src/Mail/): `Mailer` + `MailMessage`, transports `log`/`smtp`/`ses`.
+- [Log/](src/Log/): PSR-3 `Logger`.
+- [Views/](src/Views/): server-side PHP templates (`ViewPipe` renders fragments for straight-HTMX apps).
+- [Support/](src/Support/): `SortableList`, `TreeSortKeyService`, path helpers.
+- [Generator/](src/Generator/): the maker framework behind `make:*`.
+
+## Docs
+
+- Full guide: https://handlr.dev/backend/
+- Authorization deep-dive: https://handlr.dev/backend/authorization
+- Architecture decisions: `../../docs/adr/` (0004 = the policy/resolution layer).

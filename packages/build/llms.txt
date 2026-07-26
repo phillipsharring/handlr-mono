@@ -1,0 +1,94 @@
+# handlr-build
+
+> Build mechanics for Handlr sites: an HTML compiler, a static page baker, and a
+> Vite dev plugin that renders the same pages on the fly. It turns a `content/`
+> tree (pages, layouts, components) into a `dist/` of static HTML. Deliberately
+> separate from runtime concerns (HTMX/Handlebars/auth), which live in the sibling
+> package `@phillipsharring/handlr-frontend` — static sites can depend on
+> handlr-build alone.
+
+npm package `@phillipsharring/handlr-build`, ESM-only, Node >= 18. Optional peer dep
+`html-minifier-terser@^7` (loaded only when minification is on).
+
+Two entries into one rendering core (`renderPage`), so dev and prod produce identical
+HTML:
+
+1. **Production bake** — the `handlr-build-pages` CLI (or `buildPages()`) walks
+   `content/pages/`, renders every page, writes to `dist/`. Runs *after* `vite build`
+   and reads Vite's manifest so hashed asset URLs get baked in.
+2. **Dev server** — the `handlrBuild()` Vite plugin renders pages as middleware
+   during `vite dev`.
+
+## Package exports
+
+- `.` → [src/index.mjs](src/index.mjs): barrel (`renderPage`, `buildPages`, url + module helpers).
+- `./vite` → [src/vite-plugin.mjs](src/vite-plugin.mjs): the `handlrBuild()` dev plugin.
+- `./html-compiler` → [src/html-compiler.mjs](src/html-compiler.mjs): `renderPage`.
+- `./build-pages` → [src/build-pages.mjs](src/build-pages.mjs): `buildPages`.
+- `./modules` → [src/modules.mjs](src/modules.mjs): **browser-safe** module runtime (`moduleRoot`, `configure`, `initModules`).
+- `./module-dirs` → [src/module-dirs.mjs](src/module-dirs.mjs): **build-time only** module dir resolver (touches fs).
+- bin `handlr-build-pages` → [bin/build-pages.mjs](bin/build-pages.mjs).
+
+## Source files
+
+- [src/build-pages.mjs](src/build-pages.mjs): `buildPages(opts)` — reads Vite manifest for `jsSrc`/`cssHref`, deletes the manifest after, walks every `pagesDir` (skipping `_`-prefixed files), maps files → routes, hard-errors on duplicate routes, renders + optionally minifies + writes.
+- [src/html-compiler.mjs](src/html-compiler.mjs): `renderPage({ layoutsDir, pagePath, componentsDir, siteConfig, jsSrc, cssHref })` — extracts `<layout>` + `<page-head>`, expands components, substitutes `[[...]]` placeholders.
+- [src/url-helpers.mjs](src/url-helpers.mjs): route/URL math — `normalizeUrlPath`, `routeAndOutDirFromPageRel`, `outFileFromRoute`, `resolveFlatRoutes`, `assertNoFlatRouteConflicts`.
+- [src/minify.mjs](src/minify.mjs): `createHtmlMinifier` — lazy, optional, build-only; fails before rendering if the peer dep is requested but missing.
+- [src/module-dirs.mjs](src/module-dirs.mjs): `resolveModuleDirs(root, modules)` → `{ pagesDirs, componentsDirs }` (build-time).
+- [src/modules.mjs](src/modules.mjs): browser-safe `moduleRoot(importMetaUrl)`, `configure(mod, overrides)`, `initModules(modules)`.
+- [src/vite-plugin.mjs](src/vite-plugin.mjs): `handlrBuild(opts)` — dev middleware; builds a route index (surfaces the same conflicts as the build), resolves static then dynamic (`[id]`/`[slug]`) routes, canonicalizes trailing slashes, runs output through `transformIndexHtml`.
+
+## Templating model
+
+A **page** (`content/pages/*.html`) is a body plus two optional leading directives:
+
+```html
+<layout name="base" title="About" />
+<page-head><meta name="description" content="..." /></page-head>
+<h1>About</h1>
+<callout type="info">Body.</callout>
+```
+
+- `<layout name="..." />` picks `content/layouts/<name>.html` (default `base`).
+- `<page-head>` → the layout's `[[pageHead]]`.
+- The body → the layout's `[[app]]`.
+
+**Layout placeholders**, substituted by `renderPage`: `[[title]]`, `[[cssHref]]`,
+`[[jsSrc]]`, `[[pageHead]]`, `[[app]]`, `[[gitSha]]`, `[[moduleAdminNav]]`, and
+`[[<anyKey>]]` for every `siteConfig` key (e.g. `[[siteName]]`, `[[copyright]]`).
+
+**Components** (`content/components/<name>.html`): invoke as a hyphenated custom
+element (`<my-callout>`), a single-word tag matching a file (`<callout>`), or
+`<component name="..."/>` / `<component file="..."/>`. Template syntax: `[[prop]]`
+(escaped), `[[{prop}]]` (raw), `[[slot]]`, `[[#if flag]]…[[else]]…[[/if]]`; a `class=`
+on the invocation merges onto the template root. Multi-pass expansion (nesting OK).
+
+**Handlebars runtime templates**: `<template src="row" foo="bar">…</template>`
+inlines `row.html`, renders it with the tag's attrs as props, re-wraps in `<template>`.
+
+**Dynamic routes**: bracketed segments (`[id]`, `[slug]`, `[token]`) are matched as
+wildcards in dev; baked at their literal path in the static build (the client resolves
+the id at runtime).
+
+## Config & output
+
+- `site.config.js` (cwd): every key becomes a `[[key]]`; `flatRoutes`, `minify`,
+  `devCss` are read as build options. Set them here once so CLI + dev plugin agree.
+- `vite.config.js`: `plugins: [tailwindcss(), handlrBuild({ siteConfig })]`, `build.manifest: true` (required — `buildPages` reads it).
+- `package.json`: `"build": "vite build && handlr-build-pages"`.
+- Output: `flatRoutes:false` → `about/index.html`; `flatRoutes:true` → extensionless
+  `about` (re-tag `text/html` after `aws s3 sync`; nested-route conflicts hard-error).
+
+## Modules
+
+Not a `node_modules` glob — modules are explicit `siteConfig.modules` entries. Each is
+an npm package exporting a module object (self-resolving `pagesDir`/`componentsDir` via
+`moduleRoot(import.meta.url)`) or a legacy `<root>/modules/<name>/` string.
+`resolveModuleDirs()` turns them into extra `pagesDirs`/`componentsDirs`, appended after
+the app's own dirs (first-match-wins for components; route collisions hard-error).
+
+## Docs
+
+- Build guide: https://handlr.dev/frontend/build
+- Package README + NOTES: `README.md`, `NOTES.md` in this directory.
