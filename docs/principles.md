@@ -5,39 +5,60 @@ reasons things are shaped the way they are. When a design question comes up, the
 are how it gets answered. They're also a fair way to decide whether Handlr is for
 you: if you nod along, you'll be at home; if you don't, that's useful to know early.
 
+Where a principle gets dense, there's an **In plain terms** note underneath it.
+
 ## The backend: explicit, not magic
 
 **Explicit over magic.** Constructor injection everywhere, no static global state, no
 facades, nothing resolving out of a hidden global. Every abstraction is a small
 interface you can read top to bottom: to know what a route does, follow its pipe
-list; to know what a pipe needs, read its constructor. It is deliberately not a
-framework pretending to be Laravel.
+list; to know what a pipe needs, read its constructor. It is deliberately not a big
+MVC framework — no facades, no global helper soup, no folder of conventions you have
+to memorize before the first route works.
 
-**Instances over statics — never a static method.** State and behavior live on injected
-instances, not static classes or methods. Two containers stand ready to hand you what
-you need: a global one for shared services and a per-request scope for request-lifetime
-things, so reaching for `SomeThing::doIt()` is never necessary. The payoff is not just
-consistency, it's **testability** — an injected dependency is trivially swapped for a
-fake in a test, while a static call is a hard-wired global you have to fight. If you find
-yourself writing a static method, stop and inject an instance instead.
+> **In plain terms:** if you want to know how a request is handled, you can read it.
+> Follow the route to its list of pipes; open a pipe and its constructor lists
+> everything it depends on. Nothing is wired up by an invisible convention.
 
-**Laziness is a correctness guarantee, not just an optimization.** Route pipes and the
-handler are constructed only when the chain reaches them. A short-circuiting auth,
-CSRF, or policy pipe means the handler is *never built*. That's what makes "an
-unauthorized request cannot construct the handler" a structural property rather than
-a convention you hope everyone follows. (The free performance win — denied requests
-do no work — is a bonus.)
+**Prefer instances; statics are the rare exception.** State and behavior live on
+injected instances, not static classes. You almost never need a static method — there
+are two containers ready to hand you whatever you need (a global one for shared
+services, a per-request scope for request-lifetime things), so `SomeThing::doIt()` is
+the exception rather than the reflex. (The codebase has a couple, on purpose; the point
+is that they're rare and deliberate.) The real payoff is testability: an injected
+dependency is swapped for a fake in one line, where a static call is a hard-wired global
+you have to work around.
 
-**Scope binding is the injection mechanism.** Each request opens a throwaway child
-container. Shared services fall through to the parent; anything a pipe binds locally
-is visible only for that request and discarded at the end. A pipe binds a value by
-type, a downstream handler receives it by type hint. No request bag, no string keys,
-no leakage between requests.
+**Pipes and handlers resolve lazily.** A route's pipes and its handler aren't built up
+front — each is constructed only when the chain actually reaches it. That buys two
+things. It's a free performance win: if an upstream pipe short-circuits (an auth, CSRF,
+or policy denial), nothing downstream is ever constructed, so a rejected request does
+almost no work. And *when you gate the route* — put an auth or policy pipe in front —
+the fact that the handler is never built on a denial makes "an unauthorized request
+can't reach the handler" a structural property, not a check every handler has to
+remember. The safety is real, but it follows from you putting the gate there; the
+framework makes that cheap and reliable, not automatic.
 
-**Small constraints that make big mechanisms correct.** The container's `has()` is
-deliberately narrow — true only for explicit registrations — precisely so scope
-delegation works. Handlr chooses intentional, local strictness to keep the larger
-machine sound.
+**Bind to the request scope; resolve by type.** Every request runs inside its own
+throwaway child container — a *scope*. Shared services (the database, the logger) fall
+through to the parent and stay shared; anything a pipe puts into the scope lives only
+for that request and is discarded when it ends. The point is how one pipe hands work to
+another: a pipe binds an object into the scope *by its type*, and a later pipe (or the
+handler) names that type in its constructor and receives that exact object. No "request
+bag" of stringly-keyed attributes to rummage through, and nothing bleeds from one
+request into the next — which matters most under long-running worker processes, where
+there's no fresh PHP process per request to hide behind.
+
+> **In plain terms:** a pipe can prepare something — say, load and authorize the record
+> for `/things/{id}` — and drop it in a per-request box. The handler just asks for that
+> type in its constructor and it's there, already loaded and already checked.
+
+**Local constraints in service of the whole.** Some pieces are deliberately strict so a
+larger mechanism stays correct. The container's `has()`, for instance, reports true only
+for things explicitly registered — not everything it *could* autowire — and that
+narrowness is exactly what lets a scope tell "mine" from "the parent's." The aim is for
+small, local rules to keep the bigger machine sound, so that where we've gotten it right
+you don't have to think about it.
 
 ## Authorization is structural
 
@@ -46,7 +67,12 @@ between one tenant's data and another's is a code-level ownership check, and a c
 each handler must *remember* to run eventually gets forgotten. So the framework
 resolves the record, consults its policy, and binds it in — before the handler runs.
 The handler cannot act on an object it didn't receive, which makes "forgot the
-ownership check" unrepresentable for resolve-bound routes.
+ownership check" unrepresentable for routes that use this pattern.
+
+> **In plain terms:** for a route like "edit *this* checklist," you don't load the
+> checklist inside the handler and hope you remembered to check the owner. You declare
+> the record and the rule on the route; the framework loads it, checks it, and only then
+> runs your code — with the loaded record already in hand.
 
 **Resolve → consult → bind.** Resolution is a pure lookup (record or 404). Policy
 consultation grants or denies (denied → 403). Binding hands the authorized record to
@@ -70,10 +96,11 @@ its own reason. Deliberate, honest naming beats clever or borrowed vocabulary.
 ## Business logic is HTTP-agnostic
 
 **Results are values, not thrown strings.** A Handler has no `Request`/`Response`
-awareness — it takes a validated input and returns a structured result. The same
-handler serves an HTTP request and an event dispatch; a listener is just a handler on
-an event name. Keeping the result a value is exactly what lets one piece of logic feed
-both paths.
+awareness — it takes a validated input and returns a structured result *value*, leaving
+the caller to decide what to do with it: an HTTP pipe maps it to a response, while an
+event dispatch may not need the value at all. That HTTP-agnosticism is exactly what lets
+one handler serve both an HTTP request and an event dispatch — a listener is just a
+handler registered on an event name.
 
 ## The frontend is a toolkit, not a framework
 
@@ -85,6 +112,10 @@ toolkit shape rather than drifting back toward framework coupling.
 what you call, and it tree-shakes. A separate `./init` entry wires the default
 listeners for those who want batteries. New capability is a named export or an explicit
 `initX()`, never a module that self-registers on import.
+
+> **In plain terms:** `import` the package and nothing happens until you call something,
+> so you don't pay for features you don't use. Want the batteries-included setup? Import
+> `./init` and the common wiring turns on.
 
 **One global.** The package claims exactly one global (`window.htmx`, a single shared
 instance). It does not create `window.App`; your app builds that namespace and hangs on
@@ -104,10 +135,22 @@ default.
 
 **The framework owns mechanism, not your data.** Core provides the seams — a request
 identity, hooks at the data layer, authorization primitives — and stays out of your
-tables. A feature that needs to own a table (undo, an audit log) is a **module**, not a
-dormant core migration behind a flag. Core exposes the seam at zero cost when unused;
-any app opts a feature in with one install and pays nothing until it does. Clean
-schema ownership, lean core.
+tables. A feature that needs to own a table (undo, an audit log) is a **module** — or
+just your own app code, which shares the same shape (a service provider) — not a dormant
+core migration behind a flag. Core exposes the seam at zero cost when unused; any app
+opts a feature in with one install and pays nothing until it does. Clean schema
+ownership, lean core.
+
+**Domain-driven by default, but your layout is yours.** The recommended shape is to group
+a feature's pieces — its record, table, queries, pipes, handlers, policy, and listeners —
+in one domain folder, with a **service provider** tying it to the framework (routes,
+events, bindings). That service provider is the *one* thing the framework actually
+requires; a module and your own app code share exactly that shape, which is why a feature
+can start as app code and graduate to a module without changing how it's wired. Everything
+else is convention — organize by type (`Records/`, `Tables/`, `Pipes/`) instead of by
+domain if you prefer, the framework has no opinion about your folders. We reach for DDD
+because it keeps a feature's files together and its provider easy to find, not because the
+framework enforces it.
 
 **Co-versioned lockstep; a module is one dual-published unit.** The frontend runtime and
 backend framework are released in lockstep, so their versions can't drift. A module
@@ -120,13 +163,39 @@ the build package alone and add the runtime later against identical output. The 
 dev server and production bake feed one rendering core, precisely so they produce the
 same HTML.
 
-**Runtime code never imports `node:*`.** Browser-side code and build-time
-filesystem code live in separate exports. Mixing them is the exact bug class that once
-broke a production build, so the boundary is codified.
+**Runtime code never imports `node:*`.** Browser-side code and build-time filesystem
+code live in separate exports. Mixing them is the exact bug class that once broke a
+production build, so the boundary is codified.
+
+> **In plain terms:** code that runs in the browser and code that runs at build time
+> (which can touch the filesystem) are kept in separate files, so a filesystem call can't
+> accidentally get shipped to the browser.
 
 **Known debt is named, not normalized.** Where older code self-registers on import, that's
 recorded as debt with a stated direction, so new code sets the good precedent instead of
 growing the pile.
+
+## What we deliberately leave out
+
+Handlr says no to some things on purpose. Usually it isn't "that's hard" (though
+sometimes it is) — it's "there's already a simple, honest way to do this, and the
+abstraction would hide more than it helps."
+
+**No query builder.** The framework assembles only simple, boring SQL — basic CRUD and
+lookups. Anything past that goes in a query class, where you write real SQL. That's the
+right tool for the job: SQL isn't the enemy in a database-backed app, and a fluent
+builder that only approximates it tends to leak the moment a query gets interesting.
+Write the query, keep it readable, move on.
+
+**No heavyweight ORM.** A record is plain data and a table is a thin gateway. There's no
+lazy-loading relation graph quietly firing extra queries behind a property access — you
+can see what hits the database, because you wrote it.
+
+**Multi-database is mostly already yours.** The framework hand-writes only trivial,
+portable SQL, and every non-trivial query already lives in *your* query classes — so
+pointing an app at PostgreSQL or SQLite is largely a matter of writing those queries for
+your engine. A first-party dialect layer for the small built-in SQL is
+[on the roadmap](/roadmap), but the way to get there is not a query builder.
 
 ---
 

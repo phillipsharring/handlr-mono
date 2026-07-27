@@ -35,15 +35,22 @@ dates. Priorities shift as real apps surface real needs.
   client-side strings.
 - **Audit log.** A comprehensive, permanent record of who changed what — a separate module
   from undo, built on the same data-layer seam.
-- **Multi-database support.** The framework hand-writes very little SQL, so most of this is
-  already possible today by putting engine-specific queries in your own query classes.
-  Planned: extract the small built-in SQL into per-engine dialect classes so PostgreSQL,
-  SQLite, and others become a drop-in. (Not a query builder — Handlr won't be adding one.)
+- **Multi-database support.** Most of this is already in your hands: the framework
+  hand-writes only trivial, portable SQL, and any real query already lives in your own
+  query classes — so targeting PostgreSQL or SQLite is mostly a matter of writing those
+  queries for your engine. Planned: extract the small built-in SQL into per-engine dialect
+  classes so the trivial part is a drop-in too. (Still not a query builder — see
+  [Principles](/principles#what-we-deliberately-leave-out).)
 - **Straight-HTMX as a first-class path.** Server-rendered fragments, scaffolded and
   documented end to end, alongside the default API + client-side-templates approach.
 - **A "one of everything" example module.** A small but complete app — a record, a form, a
   list with pagination, an admin page, an event — installable as a single module so a new
   developer can see every capability wired together in context.
+- **Recipe repos: one path, start to finish.** Small public repos that each show a single
+  mechanic end to end — not demo apps, but the moves themselves: a static site that later
+  adds the full framework; building a module; installing and using someone else's module;
+  where your code plugs into the framework. Each goes from a working Handlr state to another
+  working Handlr state, so you can see exactly what changes.
 
 ## Exploring
 
