@@ -27,6 +27,8 @@ export default defineConfig({
       { text: 'Backend', link: '/backend/' },
       { text: 'Frontend', link: '/frontend/' },
       { text: 'Modules', link: '/modules/' },
+      { text: 'Principles', link: '/principles' },
+      { text: 'Roadmap', link: '/roadmap' },
       {
         text: 'Packages',
         items: [
@@ -43,6 +45,7 @@ export default defineConfig({
         collapsed: false,
         items: [
           { text: 'Installation', link: '/getting-started/installation' },
+          { text: 'Principles', link: '/principles' },
           { text: 'Your First App', link: '/getting-started/first-app' },
         ],
       },
@@ -85,6 +88,13 @@ export default defineConfig({
           { text: 'Writing a Module', link: '/modules/' },
           { text: 'Landing (email capture)', link: '/modules/landing' },
           { text: 'A/B Testing', link: '/modules/ab' },
+        ],
+      },
+      {
+        text: 'Project',
+        collapsed: false,
+        items: [
+          { text: 'Roadmap', link: '/roadmap' },
         ],
       },
     ],
