@@ -52,11 +52,20 @@ getting the shape right is precisely what an LLM is good at.
 
 **The code teaches you how to use it.** Reading Handlr is meant to be the documentation.
 An error names the offending value *and* the expected shape, at the call site, so the
-message teaches the fix instead of just reporting a failure. A constructor is a
+message teaches the fix instead of just reporting a failure. The good shape for such a
+message is *fact → why → fix*: what happened, why it failed, and the concrete way out —
+wrap the value, use the named form, run the maker. A constructor is a
 dependency list — it tells you everything a pipe needs. A route's pipe list is the
 request's story, read top to bottom. And because a signature accepts one shape, the
 signature itself shows you the one way to call it. The aim is that you learn the framework
 by looking at it, not by memorizing it.
+
+**Locality of behavior.** You should be able to understand a piece of code by looking at
+one place, not by chasing it across five files. A route's behavior is its pipe list; a
+component's behavior is the `data-*` attributes right there in the markup. This is the
+idea the HTMX world calls *locality of behavior*, and Handlr leans on it end to end — the
+backend keeps a request's story in its pipe stack, the frontend keeps interaction next to
+the element it affects. Fewer jumps, less hidden coupling, more that fits in your head.
 
 **One job per piece.** A pipe does one thing, a handler is one unit of business logic, a
 policy holds one resource's rules, an invariant is one rule. Small single-purpose pieces
@@ -233,6 +242,10 @@ your engine. A first-party dialect layer for the small built-in SQL is
 [on the roadmap](/roadmap), but the way to get there is not a query builder.
 
 ---
+
+*Kindred spirits:* if this resonates, you'll recognize the same instincts in Rust, Go, and
+Elm — strict about shape, generous with the error message. Handlr brings that school to a
+PHP + HTMX stack.
 
 *Where these come from:* the [Architecture Decision Records](https://github.com/phillipsharring/handlr-mono/tree/main/docs/adr)
 (ADR 0001–0004) capture the debates and trade-offs behind them in full.
