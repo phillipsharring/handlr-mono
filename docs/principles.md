@@ -20,6 +20,13 @@ to memorize before the first route works.
 > Follow the route to its list of pipes; open a pipe and its constructor lists
 > everything it depends on. Nothing is wired up by an invisible convention.
 
+**Boring over clever.** Code here should be boring: obvious on first read, dull to review,
+forgettable in the best way. If a plain five-line version and a clever one-liner do the
+same thing, write the five lines — the reader's time is worth more than your keystrokes.
+Cleverness is a loan against the next person to open the file (often you, six months on),
+and the interest is steep. When in doubt, choose the version a tired developer understands
+at a glance. This is the same instinct as "explicit over magic," pointed at your own code.
+
 **Prefer instances; statics are the rare exception.** State and behavior live on
 injected instances, not static classes. You almost never need a static method — there
 are two containers ready to hand you whatever you need (a global one for shared
@@ -28,6 +35,34 @@ the exception rather than the reflex. (The codebase has a couple, on purpose; th
 is that they're rare and deliberate.) The real payoff is testability: an injected
 dependency is swapped for a fake in one line, where a static call is a hard-wired global
 you have to work around.
+
+**One shape in, and it fails loud.** A method takes the shape it takes. If `orderBy`
+wants a list of `[column, direction]` pairs, it wants a *list* — pass a single pair and it
+throws with a clear message rather than quietly wrapping it for you. We don't write "a
+string here, an object there, or an array if you forget" signatures, and we don't guess
+which order you meant your arguments in. One shape, learned once, is more predictable than
+a menu of accepted shapes, and it surfaces a mistake at the call site instead of somewhere
+downstream. This isn't rigidity for its own sake: the framework should be easy, make
+sense, and feel good to use — but "easy" means *legible and predictable*, not *lenient*.
+Default parameters are fine where a sensible default exists, and genuine either/or inputs
+are fine too (a handler that accepts a raw array or a typed input, because both are real
+inputs). What we avoid is leniency that exists only to paper over a caller's slip. And
+with AI increasingly writing the calling code from these docs, exact types are an asset —
+getting the shape right is precisely what an LLM is good at.
+
+**The code teaches you how to use it.** Reading Handlr is meant to be the documentation.
+An error names the offending value *and* the expected shape, at the call site, so the
+message teaches the fix instead of just reporting a failure. A constructor is a
+dependency list — it tells you everything a pipe needs. A route's pipe list is the
+request's story, read top to bottom. And because a signature accepts one shape, the
+signature itself shows you the one way to call it. The aim is that you learn the framework
+by looking at it, not by memorizing it.
+
+**One job per piece.** A pipe does one thing, a handler is one unit of business logic, a
+policy holds one resource's rules, an invariant is one rule. Small single-purpose pieces
+compose into behavior; there are no god-objects to untangle. It's also what makes
+"read it to learn it" work — a piece small enough to hold in your head is a piece you can
+read.
 
 **Pipes and handlers resolve lazily.** A route's pipes and its handler aren't built up
 front — each is constructed only when the chain actually reaches it. That buys two
