@@ -106,6 +106,11 @@ export function resolveFlatRoutes(opt) {
  */
 export function outFileFromRoute(route, outDir, distDir, flatRoutes) {
     if (route === '/') return path.join(distDir, 'index.html');
+    // 404 is a conventional flat error document. Always emit `dist/404.html` (even
+    // with flatRoutes off) so a host's error page can point at `/404.html`. The
+    // flatRoutes default keep-list already treats 404 as extensionful; this makes
+    // that true regardless of flatRoutes.
+    if (routeKey(route) === '404') return `${outDir}.html`;
     if (!flatRoutes) return path.join(outDir, 'index.html');
     if (flatRoutes.keepExtension.has(routeKey(route))) return `${outDir}.html`;
     return outDir;

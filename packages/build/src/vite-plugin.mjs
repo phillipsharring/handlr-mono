@@ -153,6 +153,49 @@ async function buildRouteIndex(pagesDirs, projectRoot, flatRoutes = null) {
  * @param {boolean|{keepExtension?: string[]}} [opts.flatRoutes] - Match the build's extensionless-output mode. Falls back to `siteConfig.flatRoutes` when omitted, so setting it once in `site.config.js` covers both dev and build. Dev serving is unaffected (URLs already resolve without redirects); this only enables the nested-route conflict check so dev fails like prod. Defaults to `false`.
  * @param {string} [opts.devCss] - Dev-only: URL of the source stylesheet, with Vite's `?direct` query (e.g. `/styles/style.css?direct`). `?direct` is required for a Vite-processed CSS module — without it Vite serves the file as a JS module (`text/javascript`) and the browser refuses it as a stylesheet. When set, dev pages get a render-blocking `<link rel="stylesheet">` instead of relying on JS-injected CSS, eliminating the flash of unstyled content. Vite still hot-reloads it. Falls back to `siteConfig.devCss`. Ignored by the production build (which uses the hashed CSS from the manifest).
  */
+function escapeDevHtml(s) {
+    return String(s).replace(/[&<>"]/g, (c) => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]
+    ));
+}
+
+/**
+ * Dev-only page shown when a navigation matches no page in `content/pages` and the
+ * app has no `404.html` of its own. It teaches the fix rather than showing a bare
+ * error. Never ships — the production build bakes real pages.
+ */
+function devNotFoundPage(reqUrl) {
+    const url = escapeDevHtml(reqUrl);
+    return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>No page matched — handlr-build dev</title>
+<style>
+  body { font: 15px/1.6 system-ui, -apple-system, sans-serif; max-width: 42rem; margin: 4rem auto; padding: 0 1.25rem; color: #1e293b; }
+  h1 { font-size: 1.2rem; margin: .5rem 0 .25rem; }
+  code { background: #f1f5f9; padding: .1rem .35rem; border-radius: .25rem; }
+  pre { background: #f1f5f9; padding: .75rem 1rem; border-radius: .5rem; overflow-x: auto; }
+  .muted { color: #64748b; }
+  .tag { display: inline-block; font-size: .72rem; font-weight: 600; color: #64748b; background: #f1f5f9; padding: .15rem .5rem; border-radius: .25rem; }
+  hr { border: 0; border-top: 1px solid #e2e8f0; margin: 1.5rem 0; }
+</style>
+</head>
+<body>
+  <span class="tag">handlr-build · dev server</span>
+  <h1>No page matched <code>${url}</code></h1>
+  <p class="muted">The dev server serves pages from your <code>content/pages/</code> tree, and nothing matched this route.</p>
+  <hr>
+  <p><strong>To control what a visitor sees here:</strong> add a <code>content/pages/404.html</code>. The dev server renders it for unmatched routes, and the build bakes it to <code>dist/404/index.html</code>.</p>
+  <p><strong>For production,</strong> point your host at that page. On CloudFront + S3, add custom error responses for <strong>both 403 and 404</strong> (S3 returns 403 for a missing object under OAC):</p>
+  <pre>403 -&gt; /404/index.html   (response code 404)
+404 -&gt; /404/index.html   (response code 404)</pre>
+  <p class="muted">This page only appears in the dev server. It never ships.</p>
+</body>
+</html>`;
+}
+
 export function handlrBuild(opts = {}) {
     const siteConfig = opts.siteConfig || {};
     const jsSrc = opts.jsSrc || '/app.js';
@@ -234,7 +277,36 @@ export function handlrBuild(opts = {}) {
                     await getRouteIndex();
 
                     const pagePath = await resolvePagePath(normalizeUrlPath(url));
-                    if (!pagePath) return next();
+                    if (!pagePath) {
+                        // Only a real page navigation gets the 404 treatment. Fetches,
+                        // `/api` proxying, HMR, and asset requests must still fall
+                        // through (they aren't `Sec-Fetch-Mode: navigate`).
+                        if (req.headers['sec-fetch-mode'] !== 'navigate') return next();
+
+                        // Prefer the app's own 404 page so dev matches prod. Otherwise
+                        // serve a dev page that teaches how to add one + wire the host.
+                        const custom404 = await findStaticRoute('/404/');
+                        if (custom404) {
+                            const html404 = await renderPage({
+                                layoutsDir,
+                                pagePath: custom404,
+                                componentsDir: componentsDirs,
+                                siteConfig,
+                                title: 'Page not found',
+                                jsSrc,
+                                cssHref: devCss,
+                            });
+                            res.statusCode = 404;
+                            res.setHeader('Content-Type', 'text/html');
+                            res.end(await server.transformIndexHtml(url, html404));
+                            return;
+                        }
+
+                        res.statusCode = 404;
+                        res.setHeader('Content-Type', 'text/html');
+                        res.end(devNotFoundPage(url));
+                        return;
+                    }
 
                     // Canonicalize directory-style URLs with a trailing slash.
                     // If the resolved page is an index.html (i.e., URL refers
