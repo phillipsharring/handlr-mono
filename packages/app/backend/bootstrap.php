@@ -45,8 +45,10 @@ use Handlr\Config\Loader;
 use Handlr\Core\Container\Container;
 use Handlr\Core\EventManager;
 use Handlr\Core\ServiceProviderRegistry;
+use Handlr\Database\ChangeRecorder;
 use Handlr\Database\Db;
 use Handlr\Database\DbInterface;
+use Handlr\Database\NullRecorder;
 use Handlr\Log\Logger;
 use Psr\Log\LoggerInterface;
 
@@ -84,6 +86,11 @@ function handlr_app(): array
     $container->singleton(EventManager::class);
     $container->singleton(LoggerInterface::class, new Logger(HANDLR_APP_ROOT . '/logs/app.log'));
     $container->bind(DbInterface::class, Db::class);
+
+    // Change-capture seam default (handlr-backend 0.16+): a no-op recorder so any
+    // Table can autowire in CLI (migrate/seed) as well as the web Kernel. A module
+    // (undo/audit) rebinds it. Without this, autowiring a Table throws.
+    $container->bind(ChangeRecorder::class, NullRecorder::class);
 
     // ── Config ──
     $configPath = HANDLR_APP_APP_PATH . '/config.php';

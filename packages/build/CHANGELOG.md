@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- **Dev-server 404 handling.** When a navigation matches no page, the dev server now
+  serves the app's own `content/pages/404.html` (so dev matches prod), or — if there is
+  none — a self-contained dev page that *teaches the fix*: add a `404.html`, and wire the
+  host for production (CloudFront: custom error responses for 403 **and** 404 →
+  `/404/index.html`, since S3 returns 403 for a missing object under OAC). Only real page
+  navigations (`Sec-Fetch-Mode: navigate`) are intercepted, so `/api` proxying, fetches,
+  HMR, and asset requests still fall through. Previously an unmatched route fell through
+  to a bare response.
+
+### Changed
+
+- **404 always bakes to `dist/404.html`.** With `flatRoutes` off, `404.html` previously
+  baked to `dist/404/index.html`; it now always emits the conventional flat
+  `dist/404.html` so a host's error document can point at `/404.html` regardless of
+  `flatRoutes` (the `flatRoutes` keep-list already treated 404 as extensionful).
+  **Behavior change:** if your host's error page points at `/404/index.html`, switch it
+  to `/404.html`.
+
 ## 0.16.0
 
 Lockstep bump. No functional changes to `@phillipsharring/handlr-build` this release.

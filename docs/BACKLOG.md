@@ -2,6 +2,41 @@
 
 Running list of TODOs that aren't yet ADRs or in-flight work.
 
+## Skeleton drift: framework changes don't reach existing apps
+
+The app skeleton is a **copy-once** starting point (`composer create-project`), not a
+dependency. So when a copied file improves — `bootstrap.php`, `config.php`, `routes.php`,
+`app.js` — existing apps (reuselists, binder-quest, …) never get it, and we patch each app
+by hand. This is the single biggest source of long-term drift across the ecosystem.
+
+Latest instance: 0.16 added a `ChangeRecorder` binding in the Kernel, but the CLI
+(`migrate`/`seed`) uses the app's own `handlr_app()` bootstrap, which hand-mirrors the
+framework singletons (EventManager, Logger, Db) and hadn't picked up the new one — so
+`composer run migrate` threw `Cannot instantiate Handlr\Database\ChangeRecorder`. Patched
+per-app (reuselists) and in the skeleton bootstrap; the underlying pattern keeps recurring.
+
+Strategy, cheapest-first:
+
+1. **Shrink the copied surface.** Move framework glue OUT of copied files into the
+   versioned package so `composer update` carries it. The bootstrap's framework-singletons
+   block is the poster child: either a `Kernel::registerCoreSingletons($container)` that
+   both the web Kernel and `handlr_app()` call, **or** a container that falls back to a
+   constructor parameter's default when a class-typed dependency can't be resolved (then
+   `Table(DbInterface $db, ChangeRecorder $r = new NullRecorder())` autowires with no
+   binding at all, in web *and* CLI). The container-default-fallback is the highest-leverage
+   single change — it also fixes the `ChangeRecorder` CLI break directly. Rule of thumb: if
+   it isn't app-specific, it shouldn't be in the skeleton.
+2. **A `doctor` command that teaches the fix.** Grow the skeleton's `scripts/check.php`
+   into `composer run doctor` — validate a *generated* app against the current framework
+   (required bindings present, framework pins current, no dead module refs, migration
+   names derivable) and print exactly what to add. Fail-loud, on-brand.
+3. **(heavier, later) Managed regions + an upgrade codemod.** `// handlr:managed` markers
+   around framework-owned sections in copied files, plus a `handlr upgrade` that re-stamps
+   them per version (Rails `app:update` / Laravel Shift style). Only if 1+2 aren't enough.
+
+Do 1 opportunistically (every "we forgot the skeleton" moment is a candidate to move that
+thing into the package); 2 when a release breaks an app; 3 only if drift keeps hurting.
+
 ## `module:install` composer script (referenced by handlr-app README)
 
 `packages/app/README.md` documents `composer run module:install -- <name>`, but no
