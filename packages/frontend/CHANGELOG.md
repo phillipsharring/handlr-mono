@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.16.0
+
+### Added
+
+- **`setAdminDeniedRedirect(path)`** (`core/auth-state.js`, exported from the barrel) —
+  set where an authenticated-but-unauthorized user is sent when they hit an admin route
+  without the required permission. Pairs with `registerAdminPermissionPrefixes()`.
+
+### Changed
+
+- **The admin-permission-denied redirect is no longer hardcoded to `/game/`.** It now
+  defaults to `/` and is configurable via `setAdminDeniedRedirect()`. **Behavior change:**
+  an app that relied on the old `/game/` default must call
+  `setAdminDeniedRedirect('/game/')` to preserve it.
+
+## 0.12.0 – 0.15.1
+
+Lockstep releases, co-versioned with the framework. No functional changes to
+`@phillipsharring/handlr-frontend` in this range — version bumps only.
+
 ## 0.11.0
 
 Declarative HTMX behavior layer (ADR 0003) — fills the gaps HTMX leaves (click

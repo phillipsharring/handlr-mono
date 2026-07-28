@@ -128,8 +128,10 @@ abstract class Table
      *
      * @throws DatabaseException If $tableName or $recordClass are not defined in the child class
      */
-    public function __construct(protected DbInterface $db)
-    {
+    public function __construct(
+        protected DbInterface $db,
+        protected ChangeRecorder $recorder = new NullRecorder(),
+    ) {
         if (!isset($this->tableName, $this->recordClass)) {
             throw new DatabaseException(
                 'Table name and record class must be defined in child classes.'
@@ -509,6 +511,13 @@ abstract class Table
         }
 
         // UUID records already have string id on $record from prepareInsertData
+
+        if ($this->recorder->isRecording()) {
+            $this->recorder->record(
+                new Change(ChangeOp::Insert, $this->tableName, $record->id, null, $record->toArray())
+            );
+        }
+
         return $record;
     }
 
@@ -566,6 +575,15 @@ abstract class Table
         $this->db->execute($sql, $normalized['values']);
 
         // Ensure UUID records keep their string ids (prepareInsertData did that)
+
+        if ($this->recorder->isRecording()) {
+            foreach ($records as $inserted) {
+                $this->recorder->record(
+                    new Change(ChangeOp::Insert, $this->tableName, $inserted->id, null, $inserted->toArray())
+                );
+            }
+        }
+
         return $records;
     }
 
@@ -832,7 +850,7 @@ abstract class Table
                 && strtoupper(trim($condition[0])) === 'NOT NULL') {
                 $operator = $condition[0];
             } elseif (count($condition) < 2) {
-                throw new DatabaseException("Invalid condition for {$column}: expected [operator, value] or [value, operator].");
+                throw new DatabaseException("Invalid condition for {$column}: expected [operator, value], e.g. ['>=', 10].");
             }
 
             // BETWEEN: ['BETWEEN', a, b]
@@ -843,18 +861,17 @@ abstract class Table
                 $a = $condition[0] ?? null;
                 $b = $condition[1] ?? null;
 
-                // Prefer operator-first, but allow swapped if we can identify an operator safely.
-                if (is_string($a) && $this->isAllowedOperator($a)) {
-                    $operator = $a;
-                    $value = $b;
-                } elseif (is_string($b) && $this->isAllowedOperator($b)) {
-                    $operator = $b;
-                    $value = $a;
-                } else {
+                // Operator-first only: ['>=', 10]. One shape, learned once — we don't
+                // guess a swapped [10, '>='] for you. Use the named form when you want to
+                // be explicit: ['operator' => '>=', 'value' => 10].
+                if (!is_string($a) || !$this->isAllowedOperator($a)) {
                     throw new DatabaseException(
-                        "Invalid operator for {$column}. Expected one of: " . implode(', ', $this->allowedOperators())
+                        "Invalid operator for {$column}. Expected [operator, value] (operator first), "
+                        . "e.g. ['>=', 10]. Allowed: " . implode(', ', $this->allowedOperators())
                     );
                 }
+                $operator = $a;
+                $value = $b;
             }
         }
 
@@ -1166,6 +1183,12 @@ abstract class Table
             throw new DatabaseException('Cannot update a record without an ID.');
         }
 
+        // Snapshot the before-image only when something is recording (the extra read
+        // isn't paid otherwise). Captured before the write, using the string id.
+        $before = $this->recorder->isRecording()
+            ? $this->findById($record->id)?->toArray()
+            : null;
+
         // Get persistable data (excludes computed columns), then remove primary key and updated_at
         $data = method_exists($record, 'toPersistableArray')
             ? $record->toPersistableArray()
@@ -1192,8 +1215,15 @@ abstract class Table
 
         $sql = "UPDATE `$this->tableName` SET $setSql WHERE `{$pk}` = ?";
         $this->db->execute($sql, $values);
+        $affected = $this->db->affectedRows();
 
-        return $this->db->affectedRows();
+        if ($this->recorder->isRecording()) {
+            $this->recorder->record(
+                new Change(ChangeOp::Update, $this->tableName, $record->id, $before, $record->toArray())
+            );
+        }
+
+        return $affected;
     }
 
     /**
@@ -1223,14 +1253,49 @@ abstract class Table
         $pk = $record->primaryKey();
         $id = $record->id;
 
+        // Full row snapshot for undo, only when recording — captured before the delete.
+        $before = $this->recorder->isRecording()
+            ? $this->findById($record->id)?->toArray()
+            : null;
+
         if ($record->usesUuid()) {
             $id = $this->db->uuidToBin((string)$id);
         }
 
         $sql = "DELETE FROM `$this->tableName` WHERE `{$pk}` = ?";
         $this->db->execute($sql, [$id]);
+        $affected = $this->db->affectedRows();
 
-        return $this->db->affectedRows();
+        if ($this->recorder->isRecording()) {
+            $this->recorder->record(
+                new Change(ChangeOp::Delete, $this->tableName, $record->id, $before, null)
+            );
+        }
+
+        return $affected;
+    }
+
+    /**
+     * Child tables that the database removes via `ON DELETE CASCADE` when a row in this
+     * table is hard-deleted. Declared here so an undo/audit consumer can snapshot those
+     * child rows *before* a delete — the database performs the cascade silently and won't
+     * report what it removed. Shape: child table name => the foreign-key column pointing
+     * back at this table's primary key. Default: none.
+     *
+     * Override in a table that owns cascading children:
+     *
+     * ```php
+     * public function cascades(): array
+     * {
+     *     return ['checklist_items' => 'checklist_id'];
+     * }
+     * ```
+     *
+     * @return array<string,string>
+     */
+    public function cascades(): array
+    {
+        return [];
     }
 
     /**

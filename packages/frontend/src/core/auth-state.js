@@ -133,6 +133,10 @@ getAuthData().then(applyAuthState);
 
 let adminPermissionPrefixes = [];
 
+// Where to send an authenticated user who lacks the required admin permission.
+// Neutral default; apps override via setAdminDeniedRedirect().
+let adminDeniedRedirect = '/';
+
 /**
  * Register URL-prefix → permission mappings for admin permission checks.
  * More specific prefixes should come first (e.g. '/admin/design/' before '/admin/').
@@ -140,6 +144,15 @@ let adminPermissionPrefixes = [];
  */
 export function registerAdminPermissionPrefixes(prefixes) {
     adminPermissionPrefixes = prefixes;
+}
+
+/**
+ * Set the path an authenticated-but-unauthorized user is redirected to when
+ * they hit an admin route without the required permission. Defaults to '/'.
+ * @param {string} path - e.g. '/checklists/'
+ */
+export function setAdminDeniedRedirect(path) {
+    adminDeniedRedirect = path;
 }
 
 function checkAdminPermissions(appEl) {
@@ -156,7 +169,7 @@ function checkAdminPermissions(appEl) {
         if (!authenticated) {
             showLoginModal();
         } else if (!permissions.includes(required)) {
-            window.location.href = '/game/';
+            window.location.href = adminDeniedRedirect;
             return; // don't reveal — redirecting
         }
         appEl.style.opacity = '';

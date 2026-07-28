@@ -172,3 +172,12 @@ every convention above:
 
 When in doubt, mirror those and the routing/authorization patterns in the
 [docs](https://handlr.dev/) and the [backend llms.txt](../backend/llms.txt).
+
+## Principles
+
+The values behind the framework are worth reading before you make structural choices:
+https://handlr.dev/principles. The one most relevant to building an app: **the
+framework owns mechanism, not your data** — core provides seams, and a feature that
+owns its own tables belongs in a module (or your app), not the framework. "Explicit
+over magic", "results are values", and "authorization is structural" shape how the
+pieces above fit together.

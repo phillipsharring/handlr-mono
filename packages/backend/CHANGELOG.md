@@ -1,6 +1,47 @@
 # Changelog
 
-## Unreleased
+## 0.16.0
+
+### Added
+
+- **`RequestTrace`** — per-request identity bound as a singleton on the root
+  container and reset at the top of every `Router::dispatch()`: a correlation `id`
+  (UUIDv7, time-sortable), `method`, `path`, an optional `actor`, and `elapsedMs()`.
+  Root pipes inject it once and read live fields; scoped handlers resolve it upward.
+  `LogPipe` now stamps the id on every log line (`{id} {method} {uri}`), and every
+  dispatched response (including 404s) carries an `X-Request-Id` header. Purely
+  additive; the seam other request-scoped features (undo capture, auditing) will
+  build on.
+- **Change-capture seam (`ChangeRecorder`).** `Table::insert/insertMany/update/delete`
+  now report each write as a `Change` (op, table, id, before, after) to a container-bound
+  `ChangeRecorder` — but only when its `isRecording()` gate is true, so an app that isn't
+  capturing pays one boolean check and no before-image reads. The Kernel binds a no-op
+  `NullRecorder` by default; a module (undo, audit) rebinds it in its provider and arms it
+  per request. `update`/`delete` capture the before-image via one extra `findById` *only*
+  while recording. Also adds **`Table::cascades()`** (default `[]`) to declare
+  `ON DELETE CASCADE` children so a consumer can snapshot them before a hard delete.
+  `Table::__construct` gains an optional `ChangeRecorder` param (defaults to `NullRecorder`)
+  — non-breaking for direct construction; container-resolved tables receive the bound one.
+- **`Response::getStatusCode()` / `getHeader()` / `getHeaders()`** — read accessors
+  to match the existing `withStatus()` / `withHeader()` setters (the response was
+  write-only before; `getStatusCode()` was even referenced in a doc example).
+
+### Changed
+
+- **Table conditions are operator-first only.** `['>=', 10]` is accepted; the
+  previously-tolerated swapped form `[10, '>=']` is not — it existed only to paper over
+  argument order, which runs against "one shape in, and it fails loud" (see the Principles
+  page). Use the explicit named form when you want to be unambiguous:
+  `['operator' => '>=', 'value' => 10]`. (`buildOrderBy` was already strict this way.)
+  **BREAKING** only if you relied on the swapped order.
+
+## 0.15.1
+
+### Added
+
+- **`Response::HTTP_CONFLICT` (409)** — added the missing 409 status constant.
+
+## 0.15.0
 
 ### Added
 
@@ -10,6 +51,8 @@
   The per-route fluent form is unchanged; the disambiguation is purely "has this
   group added a route yet." Lets an object-scoped route tree declare its
   resolve/policy once instead of repeating it on every route.
+
+## 0.14.0
 
 ### Changed
 

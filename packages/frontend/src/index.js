@@ -16,7 +16,7 @@ export { initPagination } from './core/pagination.js';
 export { initTableSort } from './core/table-sort.js';
 
 // Core — auth-state (configurable)
-export { registerAdminPermissionPrefixes } from './core/auth-state.js';
+export { registerAdminPermissionPrefixes, setAdminDeniedRedirect } from './core/auth-state.js';
 
 // Core — navigation utilities
 export {
