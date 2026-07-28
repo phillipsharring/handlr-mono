@@ -1,6 +1,6 @@
 {
     "name": "@phillipsharring/create-handlr-static",
-    "version": "0.15.1",
+    "version": "0.16.0",
     "description": "Create a new Handlr static site (Vite + Tailwind + custom HTML components)",
     "type": "module",
     "license": "MIT",
