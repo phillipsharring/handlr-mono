@@ -6,7 +6,9 @@ namespace Handlr\Core;
 
 use Handlr\Core\Container\Container;
 use Handlr\Core\Routes\Router;
+use Handlr\Database\ChangeRecorder;
 use Handlr\Database\Db;
+use Handlr\Database\NullRecorder;
 use Handlr\Log\Logger;
 use Handlr\Mail\Mailer;
 use Handlr\Pipes\ErrorPipe;
@@ -133,6 +135,15 @@ final class Kernel
      */
     private function registerServices(): void
     {
+        // Per-request identity, reset each dispatch. Registered before the logger
+        // and global pipes so LogPipe can inject the same instance.
+        $this->container->singleton(RequestTrace::class, new RequestTrace());
+
+        // Change-capture seam: no-op by default so Table always has something to call
+        // (and pays only a boolean check when nothing is recording). A module — undo,
+        // audit — rebinds ChangeRecorder to a real recorder in its provider.
+        $this->container->bind(ChangeRecorder::class, NullRecorder::class);
+
         $this->registerLogger();
         $this->registerDatabase();
         $this->registerSession();

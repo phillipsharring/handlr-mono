@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.16.0
+
+Lockstep bump. No functional changes to `@phillipsharring/handlr-build` this release.
+
+## 0.7.0 – 0.15.1
+
+`handlr-build` became the monorepo's lockstep version source when the repos merged
+(ADR 0001), so from 0.7.0 it co-versions with the framework. No functional build changes
+in this range beyond version bumps and minor packaging/doc fixes — see git history.
+
 ## 0.6.1
 
 ### Docs

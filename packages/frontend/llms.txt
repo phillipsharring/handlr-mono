@@ -21,6 +21,21 @@ Two things to internalize first:
   on it (`App.ui.openFormModal`, `App.ui.toast.show`, `App.getRouteParams`, …). The
   named-action registry is deliberately module-scoped, not on `window.App`.
 
+## Principles
+
+The values behind the design (full page: https://handlr.dev/principles):
+
+- **A toolkit, not a framework.** Apps call it; it does not call apps.
+- **Pure barrel, opt-in batteries.** The barrel has zero side effects; `./init` wires the defaults. New capability = a named export or an explicit `initX()`, never a self-registering import.
+- **One global (`window.htmx`).** The app builds `window.App` itself and hangs on it only what it wants.
+- **Declarative over script.** Fill HTMX's gaps with `data-*` attributes; reach for a native HTML behavior first, write script only when the attribute layer can't express it.
+
+## Writing Handlr frontend code (rules — these also deprogram loose LLM defaults)
+
+- **No side effects on import** from the barrel — it's pure and tree-shakeable. Turn on defaults with `import '@phillipsharring/handlr-frontend/init'`, or call an explicit `initX()`. Don't assume importing wires anything up.
+- **Don't build an SPA or a global store.** Prefer declarative `data-*` behavior next to the markup (locality of behavior); write script only when the attribute layer genuinely can't express it.
+- **Don't attach to `window.App`** unless the app asked for it — the package claims only `window.htmx`. The app builds its own namespace.
+
 ## Entry points
 
 - [src/index.js](src/index.js): the barrel — re-exports only, zero side effects.

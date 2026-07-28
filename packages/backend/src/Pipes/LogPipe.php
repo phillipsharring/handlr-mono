@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Handlr\Pipes;
 
 use Handlr\Core\Request;
+use Handlr\Core\RequestTrace;
 use Handlr\Core\Response;
 use Handlr\Log\Logger;
 
@@ -83,9 +84,13 @@ use Handlr\Log\Logger;
 class LogPipe implements Pipe
 {
     /**
-     * @param Logger $log Logger instance for recording requests
+     * @param Logger         $log     Logger instance for recording requests
+     * @param RequestTrace $trace Per-request identity (for the correlation id)
      */
-    public function __construct(private Logger $log) {}
+    public function __construct(
+        private Logger $log,
+        private RequestTrace $trace,
+    ) {}
 
     /**
      * Log the request and continue to the next pipe.
@@ -99,7 +104,8 @@ class LogPipe implements Pipe
      */
     public function handle(Request $request, Response $response, array $args, callable $next): Response
     {
-        $this->log->info('{method} {uri}', [
+        $this->log->info('{id} {method} {uri}', [
+            'id' => $this->trace->getId(),
             'method' => $request->getMethod(),
             'uri' => $request->getUri(),
         ]);

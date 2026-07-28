@@ -109,6 +109,14 @@ class Response
     }
 
     /**
+     * Get the current HTTP status code.
+     */
+    public function getStatusCode(): int
+    {
+        return $this->statusCode;
+    }
+
+    /**
      * Add or replace a response header.
      *
      * @param string $name Header name (e.g., 'Content-Type', 'X-Custom')
@@ -124,6 +132,24 @@ class Response
         $clone = clone $this;
         $clone->headers[$name] = $value;
         return $clone;
+    }
+
+    /**
+     * Get a single response header by name (as set), or null if not present.
+     */
+    public function getHeader(string $name): ?string
+    {
+        return $this->headers[$name] ?? null;
+    }
+
+    /**
+     * Get all response headers.
+     *
+     * @return array<string, string>
+     */
+    public function getHeaders(): array
+    {
+        return $this->headers;
     }
 
     /**

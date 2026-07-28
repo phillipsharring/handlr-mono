@@ -8,6 +8,7 @@ use Handlr\Auth\AuthContext;
 use Handlr\Core\Container\Container;
 use Handlr\Core\Container\ContainerInterface;
 use Handlr\Core\Request;
+use Handlr\Core\RequestTrace;
 use Handlr\Core\Response;
 use Handlr\Pipes\Pipe;
 use Handlr\Policies\PolicyAction;
@@ -156,6 +157,12 @@ class Router
         $path = parse_url($rawUri, PHP_URL_PATH) ?: '/';
         $path = $this->normalizePath($path);
 
+        // Per-request identity: reset the shared RequestTrace for this request
+        // (fresh id, method, path, start time). Root pipes (LogPipe) read it live;
+        // scoped handlers resolve it upward. See RequestTrace.
+        $trace = $this->container->get(RequestTrace::class);
+        $trace->begin($method, $path);
+
         // Find matching route
         $matchedRoute = null;
         $params = [];
@@ -176,7 +183,9 @@ class Router
         }
 
         if ($matchedRoute === null) {
-            return $response->withStatus(Response::HTTP_NOT_FOUND)->withJson(['message' => '404 File Not Found']);
+            return $response->withStatus(Response::HTTP_NOT_FOUND)
+                ->withJson(['message' => '404 File Not Found'])
+                ->withHeader('X-Request-Id', $trace->getId());
         }
 
         // Set route params on request for easy access
@@ -218,7 +227,9 @@ class Router
             }
         }
 
-        return $pipeline->run($request, $response, $params);
+        $result = $pipeline->run($request, $response, $params);
+
+        return $result->withHeader('X-Request-Id', $trace->getId());
     }
 
     /**

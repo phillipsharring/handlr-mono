@@ -22,6 +22,32 @@ and are worth internalizing before reading source:
   because the child scope autowires *through* itself, a handler type-hinting `Type`
   receives that instance. This is how a resolved+authorized record reaches a handler.
 
+## Principles
+
+The values behind the design (full page: https://handlr.dev/principles):
+
+- **Explicit, not magic.** Constructor injection, no static global state, readable top to bottom. Not a framework pretending to be Laravel.
+- **Boring over clever.** Obvious code beats clever code. Write five plain lines instead of one cryptic one; optimize for the tired reader six months from now, not for keystrokes.
+- **Instances over statics — statics are the rare exception.** Inject instances from the global or request-scoped container; avoid `SomeThing::doIt()`. It's consistent and, more importantly, trivially testable (swap a fake) where a static call is a hard-wired global.
+- **One shape in, and it fails loud.** Methods take one argument shape and throw on the wrong one — no "string-or-object-or-array in case you forget," no guessing a swapped argument order. Defaults and genuine either/or inputs are fine; leniency that only papers over a caller's slip is not. (For AIs writing calls: get the types exact — that's the contract.)
+- **Laziness is correctness.** Short-circuiting pipes mean the handler is never built — auth/policy denial is a structural property, not a convention.
+- **Scope binding is injection.** A pipe binds by type into a request scope; the handler receives by type hint. No request bag, no string keys.
+- **Authorization is structural.** Resolve → consult → bind; a forgotten ownership check is an IDOR bug, so the check is made unforgettable.
+- **Split by cohesion.** Policy = one class per resource (its actions share context); invariant = one class per rule.
+- **Results are values.** Handlers are HTTP-agnostic and reused for events; a listener is just a handler on an event name.
+- **The framework owns mechanism, not your data.** Core provides seams (request identity, data-layer hooks, authz primitives); a feature that owns a table (undo, audit) is a module, not a dormant core migration.
+
+## Writing Handlr code (rules — these also deprogram loose LLM defaults)
+
+LLMs default to the magic-framework habits Handlr rejects. When generating code:
+
+- **Records:** never declare real public properties for columns — use `@property` docblocks. Real props shadow the `__get`/`__set` magic and silently break `update()`/`toPersistableArray()`.
+- **Types:** no `mixed`, no forgiving overloads. Pass the exact shape a signature asks for — a list-of-pairs is a *list* (`[['name','ASC']]`), not a single pair; don't pass a string expecting it to be parsed into an array.
+- **Table conditions** are an assoc DSL keyed by column: equality `['status' => 'active']`, operator-first `['count' => ['>=', 10]]`, `['deleted_at' => null]` for IS NULL, `['id' => ['IN', [...]]]`. Not a raw SQL string, and not a swapped `[value, operator]`. Anything non-trivial goes in a `Query` class (write real SQL there).
+- **No statics/globals:** inject dependencies through the constructor. Don't add facades, global helpers, or static method pools.
+- **Routes** attach with `intoJunction('name')` to a junction declared in `app/routes.php`; declare the junction there first if it's missing.
+- **Boring beats clever:** five clear lines over one cryptic one.
+
 ## Request lifecycle
 
 - [Core/Kernel.php](src/Core/Kernel.php): boot singleton — registers services (Logger, Db, Session, Mailer, ResolutionRegistry + Resolver), adds global pipes (ErrorPipe, LogPipe), then boots providers → loads `app/routes.php` (declares junctions) → applies provider routes (fills them).
