@@ -37,6 +37,20 @@ Strategy, cheapest-first:
 Do 1 opportunistically (every "we forgot the skeleton" moment is a candidate to move that
 thing into the package); 2 when a release breaks an app; 3 only if drift keeps hurting.
 
+## Container: default-fallback for optional constructor deps
+
+Highest-leverage slice of the "Skeleton drift" item above — pulled out so it doesn't get
+lost. When the container autowires a class whose constructor has a class-typed parameter
+**with a default** (e.g. `Table(DbInterface $db, ChangeRecorder $r = new NullRecorder())`)
+and that type can't be resolved, it currently **throws** instead of using the default. Make
+`resolveParameter`/`resolveDependency` fall back to the parameter's default when
+`isDefaultValueAvailable()` (required deps with no default still fail loud). Add tests.
+
+Payoff: optional dependencies "just work" in any container (web, CLI, tests) with no
+binding, so adding a new core service never again breaks every app's CLI bootstrap. This is
+the root cause of the 0.16 `Cannot instantiate Handlr\Database\ChangeRecorder` deploy break
+(patched per-app + in the skeleton; this retires those patches). Small, additive.
+
 ## `module:install` composer script (referenced by handlr-app README)
 
 `packages/app/README.md` documents `composer run module:install -- <name>`, but no
