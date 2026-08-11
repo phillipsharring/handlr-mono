@@ -16,9 +16,11 @@ use Handlr\Pipes\LogPipe;
 use Handlr\Resolution\ResolutionRegistry;
 use Handlr\Resolution\Resolver;
 use Handlr\Resolution\TableResolver;
+use Handlr\Session\CookieTransport;
 use Handlr\Session\DatabaseSessionDriver;
 use Handlr\Session\Session;
 use Handlr\Session\SessionInterface;
+use Handlr\Session\SessionTransport;
 
 /**
  * Application kernel that bootstraps and wires together core services.
@@ -190,6 +192,12 @@ final class Kernel
         $sessionHandler = new DatabaseSessionDriver($db);
         $session = new Session($sessionHandler);
         $this->container->singleton(SessionInterface::class, $session);
+
+        // How the session id is carried in/out is pluggable. Default to PHP's
+        // native cookie behavior (transparent — no behavior change). Apps serving
+        // native/cookieless clients rebind this to a HeaderTransport (or a
+        // ChainSessionTransport) in bootstrap. See ADR 0005.
+        $this->container->bind(SessionTransport::class, CookieTransport::class);
     }
 
     /**
