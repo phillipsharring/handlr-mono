@@ -122,13 +122,37 @@ class Session implements SessionInterface
      *
      * Safe to call multiple times - only starts if not already started
      * and no session is currently active.
+     *
+     * When a non-empty id is supplied it is adopted via `session_id()` before
+     * the session opens, so the same server-side store is reused no matter how
+     * the id reached us (cookie, header, bearer, CLI). *Where* the id comes from
+     * is a {@see SessionTransport}'s job, not this method's. Pass null to let
+     * PHP use its default (read the cookie, or mint a fresh id).
+     *
+     * @param string|null $sessionId Session id to adopt, or null for PHP default.
      */
-    public function start(): void
+    public function start(?string $sessionId = null): void
     {
         if (!$this->started && session_status() === PHP_SESSION_NONE) {
+            if ($sessionId !== null && $sessionId !== '') {
+                session_id($sessionId);
+            }
             session_start();
             $this->started = true;
         }
+    }
+
+    /**
+     * Get the current session id.
+     *
+     * Useful on the way out for handing a freshly minted id back to a cookieless
+     * client via a {@see SessionTransport}. Returns '' when no session is active.
+     *
+     * @return string The active session id, or '' when none is active.
+     */
+    public function id(): string
+    {
+        return session_id() ?: '';
     }
 
     /**

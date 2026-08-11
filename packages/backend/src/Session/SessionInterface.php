@@ -80,8 +80,21 @@ interface SessionInterface
      *
      * Must be called before any other session operations.
      * Safe to call multiple times - will only start once.
+     *
+     * The id is *what* to start, never *how* it was obtained — that lives in a
+     * {@see SessionTransport}. Pass a non-null id to adopt it via `session_id()`
+     * before the session opens; pass null for PHP's default (cookie / fresh id).
+     *
+     * @param string|null $sessionId Session id to adopt, or null for PHP default.
      */
-    public function start(): void;
+    public function start(?string $sessionId = null): void;
+
+    /**
+     * Get the current session id.
+     *
+     * @return string The active session id, or '' when none is active.
+     */
+    public function id(): string;
 
     /**
      * Get a value from the session.
