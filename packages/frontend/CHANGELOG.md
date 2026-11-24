@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.17.2
+
+### Security
+
+- **handlebars floor raised to `^4.7.10`** (was `^4.7.0`). Releases before 4.7.10 carry a
+  critical advisory; the new floor keeps a stale lockfile from resolving one. The app
+  skeleton's own `handlebars` pin moves to `^4.7.10` too.
+
 ## 0.16.0
 
 ### Added
