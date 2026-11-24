@@ -1,6 +1,18 @@
 # Changelog
 
-## Unreleased
+## 0.17.1
+
+### Fixed
+
+- **`minify` no longer strips the `[[gitSha]]` stamp.** `[[gitSha]]` renders as an HTML
+  comment (`<!-- 37627d2 -->`), and `removeComments` threw it away, so a minified site
+  lost its deployed version. The default `ignoreCustomComments` now keeps any comment
+  that is nothing but a 7–40 character hex hash, alongside html-minifier-terser's own
+  two defaults. The pattern is exported as `GIT_SHA_COMMENT`. Overriding
+  `minify: { ignoreCustomComments }` replaces the whole list, so include it there if you
+  override.
+
+## 0.16.1
 
 ### Added
 

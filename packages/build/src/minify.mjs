@@ -4,7 +4,17 @@
  * option set live in one place, and so the dep is only loaded when minify is on.
  */
 
-// Matches the option set the pre-graspr phillipharrington.com build used.
+/**
+ * Matches the comment `[[gitSha]]` renders, e.g. `<!-- 37627d2 -->`: nothing but a
+ * short or full commit hash. Without it `removeComments` strips the deployed
+ * version out of the page that stamps it.
+ */
+export const GIT_SHA_COMMENT = /^\s*[0-9a-f]{7,40}\s*$/;
+
+// Matches the option set the pre-graspr phillipharrington.com build used, plus
+// the [[gitSha]] exception. `ignoreCustomComments` repeats html-minifier-terser's
+// own defaults (`<!--! ... -->` and `<!-- # ... -->`) because setting the option
+// replaces that list rather than adding to it.
 const DEFAULT_MINIFY_OPTIONS = {
     removeAttributeQuotes: true,
     collapseWhitespace: true,
@@ -12,6 +22,7 @@ const DEFAULT_MINIFY_OPTIONS = {
     removeRedundantAttributes: true,
     removeScriptTypeAttributes: true,
     removeTagWhitespace: true,
+    ignoreCustomComments: [/^!/, /^\s*#/, GIT_SHA_COMMENT],
 };
 
 /**
@@ -20,15 +31,21 @@ const DEFAULT_MINIFY_OPTIONS = {
  *
  * - `false`/`undefined`   -> null (no minification)
  * - `true`                -> the defaults above
- * - `{ ...overrides }`    -> defaults shallow-merged with the overrides
+ * - `{ ...overrides }`    -> defaults shallow-merged with the overrides (so an
+ *                            `ignoreCustomComments` override replaces the default list)
  *
  * @param {boolean|object} [opt]
  * @returns {object | null}
  */
 export function resolveMinifyOptions(opt) {
     if (!opt) return null;
-    if (opt === true) return { ...DEFAULT_MINIFY_OPTIONS };
-    return { ...DEFAULT_MINIFY_OPTIONS, ...opt };
+    // Copy the list so a caller mutating its resolved options can't change the defaults.
+    const defaults = {
+        ...DEFAULT_MINIFY_OPTIONS,
+        ignoreCustomComments: [...DEFAULT_MINIFY_OPTIONS.ignoreCustomComments],
+    };
+    if (opt === true) return defaults;
+    return { ...defaults, ...opt };
 }
 
 /**

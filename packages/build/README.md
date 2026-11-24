@@ -176,7 +176,17 @@ npm install -D html-minifier-terser
 ```
 
 - `minify: true` uses these defaults: `removeAttributeQuotes`, `collapseWhitespace`, `removeComments`, `removeRedundantAttributes`, `removeScriptTypeAttributes`, `removeTagWhitespace`.
-- Pass an object to override individual options — it's **merged onto** the defaults, so `minify: { removeComments: false }` keeps everything else on.
+- Comments that are nothing but a commit hash survive `removeComments`, so the `<!-- 37627d2 -->` that `[[gitSha]]` renders stays in the page. This is the default `ignoreCustomComments` list: html-minifier-terser's own two patterns (`<!--! ... -->`, `<!-- # ... -->`) plus `GIT_SHA_COMMENT`.
+- Pass an object to override individual options — it's **merged onto** the defaults, so `minify: { removeComments: false }` keeps everything else on. The merge is shallow, so `minify: { ignoreCustomComments: [...] }` **replaces** the default list; include `GIT_SHA_COMMENT` if you still want the hash kept:
+
+```js
+// site.config.js
+import { GIT_SHA_COMMENT } from '@phillipsharring/handlr-build';
+
+export default {
+    minify: { ignoreCustomComments: [/^!/, /^\s*#/, GIT_SHA_COMMENT, /^\s*keep me/] },
+};
+```
 - If `minify` is on but the peer dep isn't installed, the build throws a clear error telling you to install it (it fails before rendering any page, not midway through).
 - Minification is **build-only** — `vite dev` always serves unminified HTML so it stays readable for debugging.
 - Default is `minify: false` — no behavior change. With it off, the peer dep is never loaded or required.

@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 import { buildPages } from '../src/build-pages.mjs';
 import { handlrBuild } from '../src/vite-plugin.mjs';
-import { createHtmlMinifier, resolveMinifyOptions } from '../src/minify.mjs';
+import { createHtmlMinifier, GIT_SHA_COMMENT, resolveMinifyOptions } from '../src/minify.mjs';
 
 const BIN_PATH = fileURLToPath(new URL('../bin/build-pages.mjs', import.meta.url));
 
@@ -710,6 +710,23 @@ test('resolveMinifyOptions: off -> null, true -> defaults, object -> merged', ()
     assert.equal(merged.customFlag, 1); // extra passthrough
 });
 
+test('resolveMinifyOptions keeps [[gitSha]] comments by default; an override replaces the list', () => {
+    const defaults = resolveMinifyOptions(true);
+    assert.ok(defaults.ignoreCustomComments.includes(GIT_SHA_COMMENT));
+    assert.ok(GIT_SHA_COMMENT.test(' 37627d2 '));
+    assert.ok(GIT_SHA_COMMENT.test(' 37627d2b1c4e9f0a8d7c6b5a4f3e2d1c0b9a8f7e '));
+    assert.ok(!GIT_SHA_COMMENT.test(' build comment '));
+    assert.ok(!GIT_SHA_COMMENT.test(' deadbe ')); // too short to be a short sha
+
+    const custom = [/^\s*keep me/];
+    const merged = resolveMinifyOptions({ ignoreCustomComments: custom });
+    assert.equal(merged.ignoreCustomComments, custom);
+
+    // callers mutating the resolved list must not leak into the shared defaults
+    defaults.ignoreCustomComments.push(/^x/);
+    assert.equal(resolveMinifyOptions(true).ignoreCustomComments.length, 3);
+});
+
 test('createHtmlMinifier returns null when minify is off (peer dep untouched)', async () => {
     const fail = () => Promise.reject(new Error('loader should not be called'));
     assert.equal(await createHtmlMinifier(false, fail), null);
@@ -751,6 +768,27 @@ test('minify: true shrinks output and strips comments', async () => {
         assert.match(raw, /build comment/);
         assert.doesNotMatch(min, /build comment/);
         assert.ok(min.length < raw.length, 'minified output should be smaller');
+    } finally {
+        await cleanup(fx.root);
+    }
+});
+
+test('minify: true keeps the [[gitSha]] comment while stripping the rest', async () => {
+    const fx = await makeFixture({
+        'content/pages': { 'index.html': '<!-- 37627d2 -->\n<!-- build comment -->\n<h1>Home</h1>' },
+    });
+    try {
+        await buildPages({
+            root: fx.root,
+            distDir: fx.distDir,
+            pagesDir: fx.pagesDirs[0],
+            layoutsDir: fx.layoutsDir,
+            componentsDir: fx.componentsDir,
+            minify: true,
+        });
+        const out = await fs.readFile(path.join(fx.distDir, 'index.html'), 'utf-8');
+        assert.match(out, /<!-- 37627d2 -->/);
+        assert.doesNotMatch(out, /build comment/);
     } finally {
         await cleanup(fx.root);
     }
