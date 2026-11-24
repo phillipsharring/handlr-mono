@@ -23,7 +23,7 @@
         "handlr.png"
     ],
     "peerDependencies": {
-        "handlebars": "^4.7.0",
+        "handlebars": "^4.7.10",
         "htmx.org": "^2.0.0",
         "sortablejs": "^1.15.0"
     }
