@@ -1,5 +1,7 @@
 # Handlr
 
+![Handlr](handlr.png)
+
 A co-versioned framework for building server-driven web apps and static sites: **HTMX + Handlebars + Tailwind** on the front end, a **Pipe + Handler** PHP framework on the back end, and a shared build toolchain. Everything here releases in lockstep.
 
 This is a monorepo. Each package below is published independently to its registry (npm or Packagist); the backend and app skeleton are mirrored to read-only split repos that Packagist tracks.

@@ -1,0 +1,4 @@
+# README images: shown on GitHub, kept out of `composer create-project` downloads
+/handlr.png export-ignore
+/h.png export-ignore
+/.gitattributes export-ignore
