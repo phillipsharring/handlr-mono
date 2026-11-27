@@ -1051,3 +1051,57 @@ test('<code-file> fails the build without codeRoot, for a missing file, and outs
         await cleanup(fx.root);
     }
 });
+
+// ── Build-time syntax highlighting (siteConfig.highlight + shiki) ──
+
+test('<code-file lang> highlights with CSS-variable colors when highlight is on', async () => {
+    const fx = await codeFixture('<pre><code><code-file src="dns/dns.php" lang="php" lines="1-2" /></code></pre>');
+    try {
+        const html = await buildOne(fx, { siteConfig: { codeRoot: 'examples', highlight: true } });
+        assert.match(html, /<span style="color:var\(--shiki-token-keyword\)">&lt;\?<\/span>php/);
+        assert.match(html, /<span style="color:var\(--shiki-token-string-expression\)">&quot;a&amp;b&quot;<\/span>/);
+        assert.match(html, /\$argv&#91;/, 'a [ inside highlighted code is still escaped');
+        assert.doesNotMatch(html, /<pre class="shiki/, 'spans only: no pre or code of its own');
+    } finally {
+        await cleanup(fx.root);
+    }
+});
+
+test('<code-file lang> without highlight stays plain escaped text', async () => {
+    const fx = await codeFixture('<pre><code-file src="dns/dns.php" lang="php" lines="1" /></pre>');
+    try {
+        const html = await buildOne(fx, { siteConfig: { codeRoot: 'examples' } });
+        assert.ok(html.includes('<pre>&lt;?php</pre>'), html);
+    } finally {
+        await cleanup(fx.root);
+    }
+});
+
+test('<code-highlight> highlights inline code inside a component, and passes it through when off', async () => {
+    const fx = await makeFixture({
+        'content/pages': { 'index.html': '<snippet lang="shellscript">echo &quot;hi&quot; | grep hi</snippet><snippet>plain &lt;b&gt;</snippet>' },
+    });
+    try {
+        await fs.writeFile(
+            path.join(fx.componentsDir, 'snippet.html'),
+            '<pre><code><code-highlight lang="[[lang]]">[[slot]]</code-highlight></code></pre>',
+            'utf-8'
+        );
+        let html = await buildOne(fx, { siteConfig: { highlight: true } });
+        assert.match(html, /<span style="color:var\(--shiki-token-string-expression\)">&quot;hi&quot;<\/span>/);
+        assert.ok(html.includes('<pre><code>plain &lt;b&gt;</code></pre>'), 'no lang: passed through');
+        html = await buildOne(fx);
+        assert.ok(html.includes('<pre><code>echo &quot;hi&quot; | grep hi</code></pre>'), 'highlight off: passed through');
+    } finally {
+        await cleanup(fx.root);
+    }
+});
+
+test('an unknown highlight language fails the build clearly', async () => {
+    const fx = await codeFixture('<pre><code-file src="dns/dns.php" lang="not-a-language" /></pre>');
+    try {
+        await assert.rejects(buildOne(fx, { siteConfig: { codeRoot: 'examples', highlight: true } }), /Unknown highlight language "not-a-language"/);
+    } finally {
+        await cleanup(fx.root);
+    }
+});

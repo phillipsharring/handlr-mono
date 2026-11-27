@@ -141,6 +141,11 @@ inside your own `pre` markup, or inside a component (`<code-file src="[[example]
 `lines="3-8"` includes part of a file. A missing root or file fails the build, and the
 dev server reloads when a file under `codeRoot` changes.
 
+Add `lang="php"` (or any language Shiki knows) and turn on `highlight: true` in
+`site.config.js`, with `shiki` installed, and the code comes out highlighted at
+build time, colored by CSS variables your stylesheet sets. `<code-highlight
+lang="…">` does the same for inline code.
+
 ## Config
 
 ### `site.config.js`

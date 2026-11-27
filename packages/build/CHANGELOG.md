@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased (0.19.0)
+
+### Added
+
+- **Build-time syntax highlighting.** With `highlight: true` in `site.config.js`
+  and the optional `shiki` package installed, `<code-file src="…" lang="php" />`
+  comes out highlighted, and the new built-in `<code-highlight lang="…">` does
+  the same for inline code. Colors are CSS variables (Shiki's css-variables
+  theme), so each site sets its own palette. Output is spans only. No client
+  JavaScript. Without `highlight`, nothing changes.
+
 ## 0.18.0
 
 ### Added

@@ -60,7 +60,7 @@ A **page** (`content/pages/*.html`) is a body plus two optional leading directiv
 
 **Components** (`content/components/<name>.html`): invoke as a hyphenated custom
 element (`<my-callout>`), a single-word tag matching a file (`<callout>`), or
-`<component hb-name="..."/>` / `<component hb-file="..."/>`. Attributes starting with `hb-` are the build's; all others are props. `<code-file src="..." />` inserts a file from `siteConfig.codeRoot`, HTML-escaped (optional `lines="3-8"`). Template syntax: `[[prop]]`
+`<component hb-name="..."/>` / `<component hb-file="..."/>`. Attributes starting with `hb-` are the build's; all others are props. `<code-file src="..." />` inserts a file from `siteConfig.codeRoot`, HTML-escaped (optional `lines="3-8"`). With `siteConfig.highlight: true` and `shiki` installed, `lang="php"` on `<code-file>`, or wrapping inline code in `<code-highlight lang="…">`, highlights it at build time with CSS-variable colors (`--shiki-token-keyword` etc.). Template syntax: `[[prop]]`
 (escaped), `[[{prop}]]` (raw), `[[slot]]`, `[[#if flag]]…[[else]]…[[/if]]`; a `class=`
 on the invocation merges onto the template root. Multi-pass expansion (nesting OK).
 

@@ -38,14 +38,19 @@
         "node": ">=18"
     },
     "peerDependencies": {
-        "html-minifier-terser": "^7.0.0"
+        "html-minifier-terser": "^7.0.0",
+        "shiki": ">=3.0.0"
     },
     "peerDependenciesMeta": {
         "html-minifier-terser": {
             "optional": true
+        },
+        "shiki": {
+            "optional": true
         }
     },
     "devDependencies": {
-        "html-minifier-terser": "^7.2.0"
+        "html-minifier-terser": "^7.2.0",
+        "shiki": "^4.6.0"
     }
 }

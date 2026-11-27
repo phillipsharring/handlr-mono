@@ -365,7 +365,81 @@ async function resolveComponentTemplatePath({ componentsDirs, componentNames, at
  * is written as &#91; so code containing [[x]] can't be read as a placeholder.
  * A missing codeRoot or file is a build error.
  */
-async function renderCodeFile(attrs, codeRoot) {
+// ── Build-time syntax highlighting (optional; needs the shiki package) ──
+//
+// Colors come out as CSS variables (Shiki's css-variables theme), never fixed
+// colors, so each site maps them to its own palette, light and dark:
+// --shiki-foreground, --shiki-token-keyword, --shiki-token-string,
+// --shiki-token-comment, --shiki-token-constant, --shiki-token-function, and
+// the rest of Shiki's set. The output is spans only, no pre or code, so it
+// goes inside whatever markup the site already uses.
+
+let highlighterPromise = null;
+
+async function getHighlighter() {
+    if (!highlighterPromise) {
+        highlighterPromise = (async () => {
+            let shiki;
+            try {
+                shiki = await import('shiki');
+            } catch {
+                throw new Error('siteConfig.highlight is on, but the shiki package is missing: npm install -D shiki');
+            }
+            const theme = shiki.createCssVariablesTheme({
+                name: 'css-variables',
+                variablePrefix: '--shiki-',
+                fontStyle: true,
+            });
+            return shiki.createHighlighter({ themes: [theme], langs: [] });
+        })();
+    }
+    return highlighterPromise;
+}
+
+// Escaped for the page: HTML-escaped, and `[` as &#91; so code containing
+// [[something]] is never read as a placeholder.
+function escapeCode(text) {
+    return htmlEscape(text).replaceAll('[', '&#91;');
+}
+
+function decodeEntities(text) {
+    return text
+        .replace(/&#91;/g, '[')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&amp;/g, '&');
+}
+
+async function highlightCode(code, lang) {
+    const highlighter = await getHighlighter();
+    if (!highlighter.getLoadedLanguages().includes(lang)) {
+        try {
+            await highlighter.loadLanguage(lang);
+        } catch {
+            throw new Error(`Unknown highlight language "${lang}" (any language Shiki knows: php, html, sql, shellscript, ...)`);
+        }
+    }
+    const { tokens } = highlighter.codeToTokens(code, { lang, theme: 'css-variables' });
+    return tokens
+        .map((line) =>
+            line
+                .map((token) => {
+                    const text = escapeCode(token.content);
+                    const styles = [];
+                    if (token.color && token.color !== 'var(--shiki-foreground)') styles.push(`color:${token.color}`);
+                    if (token.fontStyle & 1) styles.push('font-style:italic');
+                    if (token.fontStyle & 2) styles.push('font-weight:bold');
+                    if (token.fontStyle & 4) styles.push('text-decoration:underline');
+                    return styles.length ? `<span style="${styles.join(';')}">${text}</span>` : text;
+                })
+                .join('')
+        )
+        .join('\n');
+}
+
+async function renderCodeFile(attrs, codeRoot, highlight = false) {
     const src = typeof attrs.src === 'string' ? attrs.src : '';
     if (!src) throw new Error('<code-file> needs src="path/to/file", relative to siteConfig.codeRoot');
     if (!codeRoot) throw new Error(`<code-file src="${src}">: set codeRoot in site.config.js to the folder it reads from`);
@@ -390,10 +464,11 @@ async function renderCodeFile(attrs, codeRoot) {
         text = text.split(/\r?\n/).slice(from - 1, to).join('\n');
     }
 
-    return htmlEscape(text).replaceAll('[', '&#91;');
+    if (highlight && typeof attrs.lang === 'string' && attrs.lang) return highlightCode(text, attrs.lang);
+    return escapeCode(text);
 }
 
-async function expandComponents(html, { componentsDirs, componentNames, codeRoot = null, maxPasses = 50 }) {
+async function expandComponents(html, { componentsDirs, componentNames, codeRoot = null, highlight = false, maxPasses = 50 }) {
     let src = html;
 
     for (let pass = 0; pass < maxPasses; pass++) {
@@ -445,10 +520,30 @@ async function expandComponents(html, { componentsDirs, componentNames, codeRoot
                     if (!close) throw new Error(`Unclosed <${tagName}> tag near: ${openTag}`);
                     end = close.end;
                 }
-                const code = await renderCodeFile(attrs, codeRoot);
+                const code = await renderCodeFile(attrs, codeRoot, highlight);
                 src = src.slice(0, lt) + code + src.slice(end);
                 changed = true;
                 idx = lt + code.length;
+                continue;
+            }
+
+            // <code-highlight lang="php">already-escaped code</code-highlight>:
+            // highlights inline code, for a component that wraps its slot in it.
+            // With highlighting off, or no lang, the code passes through as is.
+            if (tagLower === 'code-highlight') {
+                let inner = '';
+                let end = tagEnd + 1;
+                if (!selfClosing) {
+                    const close = findMatchingCloseForTag(src, tagName, tagEnd + 1);
+                    if (!close) throw new Error(`Unclosed <${tagName}> tag near: ${openTag}`);
+                    inner = src.slice(tagEnd + 1, close.start);
+                    end = close.end;
+                }
+                const lang = typeof attrs.lang === 'string' ? attrs.lang : '';
+                const out = highlight && lang ? await highlightCode(decodeEntities(inner), lang) : inner;
+                src = src.slice(0, lt) + out + src.slice(end);
+                changed = true;
+                idx = lt + out.length;
                 continue;
             }
 
@@ -626,12 +721,14 @@ async function discoverComponentNames(componentsDirs) {
  * @param {string} [opts.title]
  * @param {string|null} [opts.jsSrc]
  * @param {string|null} [opts.cssHref]
- * @param {object} [opts.siteConfig] - siteConfig.codeRoot (relative to root) is where <code-file> reads.
+ * @param {object} [opts.siteConfig] - siteConfig.codeRoot (relative to root) is where <code-file> reads;
+ *        siteConfig.highlight turns on build-time syntax highlighting (needs shiki).
  * @param {string} [opts.root] - Project root, for resolving codeRoot. Defaults to process.cwd().
  */
 export async function renderPage({ layoutsDir, pagePath, title, jsSrc, cssHref, componentsDir, siteConfig = {}, root }) {
     const componentsDirs = toComponentsDirArray(componentsDir);
     const codeRoot = resolveCodeRoot(siteConfig, root);
+    const highlight = Boolean(siteConfig?.highlight);
 
     const pageSrcRaw = await fs.readFile(pagePath, 'utf-8');
     const { layoutName, title: layoutTitle, pageContent: afterLayoutTag } = extractLayoutDeclaration(pageSrcRaw);
@@ -643,9 +740,9 @@ export async function renderPage({ layoutsDir, pagePath, title, jsSrc, cssHref, 
 
     const componentNames = await discoverComponentNames(componentsDirs);
 
-    let pageSrc = await expandComponents(pageSrcStripped, { componentsDirs, componentNames, codeRoot });
+    let pageSrc = await expandComponents(pageSrcStripped, { componentsDirs, componentNames, codeRoot, highlight });
     pageSrc = await expandTemplateSrc(pageSrc, path.dirname(pagePath));
-    const layoutSrc = await expandComponents(layoutSrcRaw, { componentsDirs, componentNames, codeRoot });
+    const layoutSrc = await expandComponents(layoutSrcRaw, { componentsDirs, componentNames, codeRoot, highlight });
 
     // [[title]] resolves to "PageTitle | " (with separator) or "" (empty);
     // the layout provides its own suffix in the <title> tag, e.g.

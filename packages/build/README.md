@@ -135,6 +135,52 @@ export default {
 - The dev server watches `codeRoot` and reloads the page when a file in it
   changes.
 
+## Syntax highlighting: `highlight`
+
+Optional, at build time (and in the dev server), so pages ship plain HTML and
+CSS: no JavaScript, nothing loaded from anyone else. Install
+[Shiki](https://shiki.style) and turn it on:
+
+```bash
+npm install -D shiki
+```
+
+```js
+export default {
+    highlight: true,
+};
+```
+
+- `<code-file src="dns/dns.php" lang="php" />` comes out highlighted.
+- `<code-highlight lang="shellscript">echo &quot;hi&quot;</code-highlight>`
+  highlights inline code (written escaped, as usual in HTML), for a component
+  that wraps its slot in it.
+- Any language Shiki knows: `php`, `html`, `sql`, `shellscript`, `json`, `yaml`,
+  `nginx`, and many more. An unknown one fails the build.
+- With `highlight` off, or no `lang`, both pass the code through unchanged.
+
+The output is `<span>`s only, so it goes inside your own `pre` or code markup.
+Colors are CSS variables, never fixed colors, so your stylesheet picks them,
+with separate values for dark mode if you like:
+
+```css
+:root {
+    --shiki-foreground: #24292e;
+    --shiki-token-keyword: #d73a49;
+    --shiki-token-string: #032f62;
+    --shiki-token-string-expression: #032f62;
+    --shiki-token-comment: #6a737d;
+    --shiki-token-constant: #005cc5;
+    --shiki-token-function: #6f42c1;
+    --shiki-token-parameter: #24292e;
+    --shiki-token-punctuation: #24292e;
+    --shiki-token-link: #032f62;
+}
+```
+
+A `[` in highlighted code is still written as `&#91;`, so code can't be read as
+a placeholder.
+
 ## Programmatic API
 
 ```js
