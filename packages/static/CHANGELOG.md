@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.18.0
+
+Lockstep bump. No functional changes to `@phillipsharring/create-handlr-static` this release.
+
 ## 0.16.0
 
 Lockstep bump. No functional changes to `@phillipsharring/create-handlr-static` this release.

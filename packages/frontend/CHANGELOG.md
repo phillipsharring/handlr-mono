@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.18.0
+
+Lockstep bump. No functional changes to `@phillipsharring/handlr-frontend` this release.
+
 ## 0.17.2
 
 ### Security

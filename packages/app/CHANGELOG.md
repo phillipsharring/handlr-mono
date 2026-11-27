@@ -4,6 +4,15 @@
 target). It co-versions in lockstep with the framework; this file records changes to the
 **skeleton itself**. Full commit-level detail is in git history.
 
+## 0.18.0
+
+### Changed
+
+- **Component overrides renamed for handlr-build 0.18:** every `<component file="...">`
+  in the layouts and admin pages is now `<component hb-file="...">`. Apps made from an
+  earlier skeleton need the same rename when they move to handlr-build 0.18; the old
+  form fails the build with an error saying so.
+
 ## 0.16.0
 
 Lockstep bump — framework pins raised to `^0.16.0`. No skeleton changes this release.
