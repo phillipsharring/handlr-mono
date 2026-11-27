@@ -93,7 +93,11 @@ A component is a reusable template in `content/components/<name>.html`. Invoke i
 
 - a hyphenated custom element — `<my-callout>…</my-callout>`
 - a single-word tag matching a file — `<callout>` ↔ `callout.html`
-- explicitly — `<component name="callout" />` or `<component file="path.html" />`
+- explicitly — `<component hb-name="callout" />` or `<component hb-file="path.html" />`
+
+Attributes starting with `hb-` are instructions to the build and never reach the
+output; every other attribute is a prop. (Before 0.18 the overrides were `name=` and
+`file=`.)
 
 Inside the template:
 
@@ -127,6 +131,15 @@ A bracketed path segment is dynamic: `content/pages/blog/[slug].html`. In the de
 server, real URLs match the pattern (`/blog/my-post/` → `[slug].html`). In the static
 build, the page is baked at its literal `[slug]` path and the client resolves the
 actual value at runtime.
+
+
+## Including source files
+
+`<code-file src="dns/dns.php" />` inserts a file's contents, HTML-escaped, at build
+time, read from `codeRoot` in `site.config.js` (relative to the project root). Use it
+inside your own `pre` markup, or inside a component (`<code-file src="[[example]]" />`).
+`lines="3-8"` includes part of a file. A missing root or file fails the build, and the
+dev server reloads when a file under `codeRoot` changes.
 
 ## Config
 

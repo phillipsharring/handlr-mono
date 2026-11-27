@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { renderPage } from './html-compiler.mjs';
+import { renderPage, resolveCodeRoot } from './html-compiler.mjs';
 import {
     normalizeUrlPath,
     titleFromUrlPath,
@@ -211,6 +211,17 @@ export function handlrBuild(opts = {}) {
             const pagesDirs = toArrayOption(opts.pagesDirs, opts.pagesDir, path.join(projectRoot, 'content', 'pages'));
             const componentsDirs = toArrayOption(opts.componentsDirs, opts.componentsDir, path.join(projectRoot, 'content', 'components'));
 
+            // <code-file> reads from siteConfig.codeRoot, usually outside the
+            // project, so Vite isn't watching it: watch it, and reload the page
+            // when one of its files changes.
+            const codeRoot = resolveCodeRoot(siteConfig, projectRoot);
+            if (codeRoot && server.watcher) {
+                server.watcher.add(codeRoot);
+                server.watcher.on('change', (file) => {
+                    if (!path.relative(codeRoot, file).startsWith('..')) server.ws?.send({ type: 'full-reload' });
+                });
+            }
+
             // Verify there are no static-route collisions across roots up front,
             // so the dev server fails loud and early instead of silently masking
             // a conflict that would blow up in `npm run build`. Async, fire on
@@ -295,6 +306,7 @@ export function handlrBuild(opts = {}) {
                                 title: 'Page not found',
                                 jsSrc,
                                 cssHref: devCss,
+                                root: projectRoot,
                             });
                             res.statusCode = 404;
                             res.setHeader('Content-Type', 'text/html');
@@ -329,6 +341,7 @@ export function handlrBuild(opts = {}) {
                         title: titleFromUrlPath(url),
                         jsSrc,
                         cssHref: devCss,
+                        root: projectRoot,
                     });
 
                     const transformed = await server.transformIndexHtml(url, html);

@@ -914,3 +914,140 @@ test('buildPages does not throw when there is no vite manifest', async () => {
         await cleanup(fx.root);
     }
 });
+
+// ── Nested tags whose names share a prefix ──
+
+async function buildOne(fx, extra = {}) {
+    await buildPages({
+        root: fx.root,
+        distDir: fx.distDir,
+        pagesDir: fx.pagesDirs[0],
+        layoutsDir: fx.layoutsDir,
+        componentsDir: fx.componentsDir,
+        ...extra,
+    });
+    return fs.readFile(path.join(fx.distDir, 'index.html'), 'utf-8');
+}
+
+test('a tag nested in one whose name is its prefix still closes (project-facts in project)', async () => {
+    const fx = await makeFixture({
+        'content/pages': {
+            'index.html':
+                '<project-box><project-box-facts>inner</project-box-facts></project-box>' +
+                '<project-box-facts><project-box>reverse</project-box></project-box-facts>',
+        },
+    });
+    try {
+        await fs.writeFile(path.join(fx.componentsDir, 'project-box.html'), '<section>[[slot]]</section>', 'utf-8');
+        await fs.writeFile(path.join(fx.componentsDir, 'project-box-facts.html'), '<dl>[[slot]]</dl>', 'utf-8');
+        const html = await buildOne(fx);
+        assert.match(html, /<section><dl>inner<\/dl><\/section>/);
+        assert.match(html, /<dl><section>reverse<\/section><\/dl>/);
+    } finally {
+        await cleanup(fx.root);
+    }
+});
+
+// ── hb- attributes are the build's; file= and name= are ordinary props ──
+
+test('hb-file picks the template, and file/name pass through as props', async () => {
+    const fx = await makeFixture({
+        'content/pages': {
+            'index.html': '<code-box hb-file="special.html" file="dns/dns.php" name="lookup" class="wide">x</code-box>',
+        },
+    });
+    try {
+        await fs.writeFile(
+            path.join(fx.componentsDir, 'special.html'),
+            '<figure data-file="[[file]]" data-name="[[name]]">[[slot]]</figure>',
+            'utf-8'
+        );
+        const html = await buildOne(fx);
+        assert.match(html, /data-file="dns\/dns\.php"/);
+        assert.match(html, /data-name="lookup"/);
+        assert.match(html, /class="wide"/);
+        assert.doesNotMatch(html, /hb-file/);
+    } finally {
+        await cleanup(fx.root);
+    }
+});
+
+test('<component hb-name> resolves, and the old name= says it was renamed', async () => {
+    const fx = await makeFixture({ 'content/pages': { 'index.html': '<component hb-name="greet" />' } });
+    try {
+        await fs.writeFile(path.join(fx.componentsDir, 'greet.html'), '<p>hi</p>', 'utf-8');
+        assert.match(await buildOne(fx), /<p>hi<\/p>/);
+
+        await fs.writeFile(path.join(fx.pagesDirs[0], 'index.html'), '<component name="greet" />', 'utf-8');
+        await assert.rejects(buildOne(fx), /renamed `hb-name=` and `hb-file=`/);
+    } finally {
+        await cleanup(fx.root);
+    }
+});
+
+// ── <code-file> includes a file from siteConfig.codeRoot ──
+
+async function codeFixture(page) {
+    const fx = await makeFixture({ 'content/pages': { 'index.html': page } });
+    await fs.mkdir(path.join(fx.root, 'examples', 'dns'), { recursive: true });
+    await fs.writeFile(
+        path.join(fx.root, 'examples', 'dns', 'dns.php'),
+        '<?php\n$host = $argv[1] ?? "a&b";\necho "[[title]]";\n',
+        'utf-8'
+    );
+    return fx;
+}
+
+test('<code-file> inserts the file escaped, without its trailing newline', async () => {
+    const fx = await codeFixture('<pre><code><code-file src="dns/dns.php" /></code></pre>');
+    try {
+        const html = await buildOne(fx, { siteConfig: { codeRoot: 'examples' } });
+        assert.ok(
+            html.includes(
+                '<pre><code>&lt;?php\n$host = $argv&#91;1] ?? &quot;a&amp;b&quot;;\necho &quot;&#91;&#91;title]]&quot;;</code></pre>'
+            ),
+            html
+        );
+    } finally {
+        await cleanup(fx.root);
+    }
+});
+
+test('<code-file lines> shows just those lines', async () => {
+    const fx = await codeFixture('<pre><code-file src="dns/dns.php" lines="2" /></pre>|<pre><code-file src="dns/dns.php" lines="1-2" /></pre>');
+    try {
+        const html = await buildOne(fx, { siteConfig: { codeRoot: 'examples' } });
+        assert.ok(html.includes('<pre>$host = $argv&#91;1] ?? &quot;a&amp;b&quot;;</pre>|'), html);
+        assert.ok(html.includes('|<pre>&lt;?php\n$host'), html);
+    } finally {
+        await cleanup(fx.root);
+    }
+});
+
+test('<code-file> works from inside a component, with the path as a prop', async () => {
+    const fx = await codeFixture('<code-block example="dns/dns.php" />');
+    try {
+        await fs.writeFile(
+            path.join(fx.componentsDir, 'code-block.html'),
+            '<pre><code><code-file src="[[example]]" lines="1" /></code></pre><a href="/x/[[example]]">[[example]]</a>',
+            'utf-8'
+        );
+        const html = await buildOne(fx, { siteConfig: { codeRoot: 'examples' } });
+        assert.ok(html.includes('<pre><code>&lt;?php</code></pre><a href="/x/dns/dns.php">dns/dns.php</a>'), html);
+    } finally {
+        await cleanup(fx.root);
+    }
+});
+
+test('<code-file> fails the build without codeRoot, for a missing file, and outside codeRoot', async () => {
+    let fx = await codeFixture('<code-file src="dns/dns.php" />');
+    try {
+        await assert.rejects(buildOne(fx), /set codeRoot in site\.config\.js/);
+        await fs.writeFile(path.join(fx.pagesDirs[0], 'index.html'), '<code-file src="dns/nope.php" />', 'utf-8');
+        await assert.rejects(buildOne(fx, { siteConfig: { codeRoot: 'examples' } }), /no such file in codeRoot/);
+        await fs.writeFile(path.join(fx.pagesDirs[0], 'index.html'), '<code-file src="../content/pages/index.html" />', 'utf-8');
+        await assert.rejects(buildOne(fx, { siteConfig: { codeRoot: 'examples' } }), /points outside codeRoot/);
+    } finally {
+        await cleanup(fx.root);
+    }
+});

@@ -219,6 +219,7 @@ export async function buildPages(opts = {}) {
             siteConfig,
             jsSrc,
             cssHref,
+            root,
         });
 
         if (minifyHtml) html = await minifyHtml(html);

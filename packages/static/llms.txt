@@ -69,7 +69,7 @@ A **page** is a body plus optional leading directives:
 - **Layout placeholders**: `[[app]]`, `[[title]]`, `[[cssHref]]`, `[[jsSrc]]`,
   `[[pageHead]]`, `[[gitSha]]`, and `[[<anyKey>]]` for every `site.config.js` key.
 - **Components** (`content/components/<name>.html`): invoke as `<callout>` (single-word
-  tag matching a file), `<my-thing>` (hyphenated), or `<component name="…"/>`. Inside:
+  tag matching a file), `<my-thing>` (hyphenated), or `<component hb-name="…"/>`. Inside:
   `[[prop]]` (escaped), `[[{prop}]]` (raw), `[[slot]]`, `[[#if flag]]…[[else]]…[[/if]]`.
 - **Routing** is file-based: `content/pages/about.html` → `/about/`. Bracketed segments
   (`[slug].html`) are dynamic. Files prefixed `_` are skipped.

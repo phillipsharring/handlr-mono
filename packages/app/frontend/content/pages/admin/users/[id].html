@@ -2,10 +2,10 @@
 
 <div class="space-y-6">
     <div class="flex items-center gap-3">
-        <component file="back-link.html" href="/admin/users/accounts/">Back to Accounts</component>
+        <component hb-file="back-link.html" href="/admin/users/accounts/">Back to Accounts</component>
     </div>
 
-    <component file="admin-detail-loader.html"
+    <component hb-file="admin-detail-loader.html"
         id="user-detail" trigger="load, reload-user-detail-event from:body"
         template="user-detail-template" class="space-y-6"
     >(Loading user...)</component>
@@ -15,7 +15,7 @@
             <div class="flex items-center justify-between px-4 py-3 bg-slate-50 border-b">
                 <h2 class="text-sm font-semibold text-slate-700">Roles</h2>
             </div>
-            <component file="admin-detail-loader.html"
+            <component hb-file="admin-detail-loader.html"
                 id="roles-form-container" url="/api/admin/roles/for-select"
                 trigger="load, reload-user-detail-event from:body"
                 template="roles-form-template" class="p-4" small

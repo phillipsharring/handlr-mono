@@ -1,5 +1,34 @@
 # Changelog
 
+## Unreleased (0.18.0)
+
+### Added
+
+- **`<code-file src="…" />`** includes a file's contents in a page at build time,
+  HTML-escaped, read from the new `siteConfig.codeRoot`. One tested copy of example
+  code instead of a pasted one. Optional `lines="3-8"`. Works inside components
+  (`<code-file src="[[example]]" />`). The dev server watches `codeRoot` and reloads
+  on change. A missing root or file, or a path outside the root, fails the build.
+- `renderPage()` takes an optional `root` (the project root, for resolving
+  `codeRoot`); `buildPages()` and the dev plugin pass theirs.
+
+### Changed
+
+- **Breaking: the template overrides are `hb-file=` and `hb-name=`.** They were
+  `file=` and `name=`, which the build read on every tag and stripped from the
+  output, so no component could have a `file` or `name` prop of its own. Any
+  attribute starting with `hb-` is now the build's; every other name is an
+  ordinary prop. Rename `<component file="…">` to `<component hb-file="…">` and
+  `<component name="…">` to `<component hb-name="…">`; the old forms on
+  `<component>` fail with an error that says so. The app skeleton is updated.
+
+### Fixed
+
+- **A tag nested inside one whose name is its prefix no longer breaks the build.**
+  Finding a tag's closing tag counted every `<name…` as another opening, so
+  `<project-facts>` inside `<project>` threw "Unclosed <project> tag". An
+  opening now has to be the name followed by whitespace, `/` or `>`.
+
 ## 0.17.1
 
 ### Fixed

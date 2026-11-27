@@ -97,6 +97,44 @@ export default defineConfig({
 
 Custom tags can be either HTML custom-element style (`<my-callout>`  - must contain a hyphen) or single-word tags (`<callout>`  - works as long as a matching `callout.html` exists in `content/components/`).
 
+### Attributes the build reads: `hb-*`
+
+Every attribute on a component tag is a prop, except the ones that start with
+`hb-`. Those are instructions to handlr-build, and never reach the rendered
+markup:
+
+- `hb-file="path/to/template.html"`  - render this template instead of the one
+  named after the tag (relative to the components directory).
+- `<component hb-name="callout" />`  - the generic tag, naming its template.
+
+So `file`, `name`, `src` and any other plain name are ordinary props, free for
+your own components. (Before 0.18 the overrides were `file=` and `name=`,
+which made those two names unusable as props.)
+
+## Including source files: `<code-file>`
+
+`<code-file src="dns/dns.php" />` is replaced, at build time, by the contents of
+that file, HTML-escaped, so a page can show real code from one tested copy
+instead of a pasted one. Files are read from `codeRoot` in `site.config.js`,
+relative to the project root:
+
+```js
+export default {
+    codeRoot: '../my-examples', // a sibling checkout, a git submodule, a folder
+};
+```
+
+- It inserts escaped text only, with no wrapper: put it inside your own `pre`
+  or code markup, or inside a component (`<code-file src="[[example]]" />` in
+  a template works).
+- `lines="3-8"` (or `lines="3"`) includes just those lines, counting from 1.
+- The file's trailing newline is dropped, and `[` is escaped, so code that
+  contains `[[something]]` is never read as a placeholder.
+- A missing `codeRoot`, a missing file, or a `src` that climbs out of
+  `codeRoot` fails the build.
+- The dev server watches `codeRoot` and reloads the page when a file in it
+  changes.
+
 ## Programmatic API
 
 ```js

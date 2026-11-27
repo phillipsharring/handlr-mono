@@ -2,10 +2,10 @@
 
 <div class="space-y-6">
     <div class="flex items-center gap-3">
-        <component file="back-link.html" href="/admin/users/roles/">Back to Roles</component>
+        <component hb-file="back-link.html" href="/admin/users/roles/">Back to Roles</component>
     </div>
 
-    <component file="admin-detail-loader.html"
+    <component hb-file="admin-detail-loader.html"
         id="role-detail" trigger="load, reload-role-detail-event from:body"
         template="role-detail-template" class="space-y-6"
     >(Loading role...)</component>
@@ -15,7 +15,7 @@
             <div class="flex items-center justify-between px-4 py-3 bg-slate-50 border-b">
                 <h2 class="text-sm font-semibold text-slate-700">Permissions</h2>
             </div>
-            <component file="admin-detail-loader.html"
+            <component hb-file="admin-detail-loader.html"
                 id="permissions-form-container" url="/api/admin/permissions"
                 trigger="load, reload-role-detail-event from:body"
                 template="permissions-form-template" class="p-4" small

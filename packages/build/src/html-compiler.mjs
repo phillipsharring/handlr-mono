@@ -196,7 +196,7 @@ function mergeRootClass(renderedHtml, extraClass) {
 
     attrs.class = merged;
     const rebuiltAttrs = Object.entries(attrs)
-        .filter(([k]) => k !== 'name' && k !== 'file')
+        .filter(([k]) => !isBuildAttr(k))
         .map(([k, v]) => {
             if (v === true) return k;
             return `${k}="${String(v).replaceAll('"', '&quot;')}"`;
@@ -226,7 +226,11 @@ function renderComponentTemplate(tplSrc, props, slotHtml) {
 }
 
 function findMatchingCloseForTag(src, tagName, fromIdx) {
-    const open = `<${tagName}`;
+    // An opening tag is the name followed by whitespace, `/` or `>`. A plain
+    // indexOf('<' + name) also matched longer names that start with it, so a
+    // <project-facts> inside a <project> counted as a second <project> and the
+    // outer tag never closed.
+    const openRe = new RegExp(`<${escapeRegex(tagName)}(?=[\\s/>])`, 'g');
     // HTML5 allows whitespace between the tag name and `>` in end tags
     // (`</lnk>` and `</lnk\n>` are both valid). Prettier emits the latter
     // form when wrapping long attribute lists on inline elements, so we
@@ -236,7 +240,9 @@ function findMatchingCloseForTag(src, tagName, fromIdx) {
     let i = fromIdx;
 
     while (i < src.length) {
-        const nextOpen = src.indexOf(open, i);
+        openRe.lastIndex = i;
+        const openMatch = openRe.exec(src);
+        const nextOpen = openMatch ? openMatch.index : -1;
         closeRe.lastIndex = i;
         const closeMatch = closeRe.exec(src);
         const nextClose = closeMatch ? closeMatch.index : -1;
@@ -244,7 +250,7 @@ function findMatchingCloseForTag(src, tagName, fromIdx) {
         if (nextClose === -1) return null;
         if (nextOpen !== -1 && nextOpen < nextClose) {
             depth++;
-            i = nextOpen + open.length;
+            i = nextOpen + openMatch[0].length;
             continue;
         }
 
@@ -288,11 +294,16 @@ async function fileExists(p) {
     }
 }
 
-async function resolveComponentTemplatePath({ componentsDirs, componentNames, attrs, tagName }) {
-    const file = typeof attrs.file === 'string' ? attrs.file : null;
-    const name = typeof attrs.name === 'string' ? attrs.name : null;
+// Attributes handlr-build reads for itself carry an hb- prefix, so every other
+// name (file, name, src, ...) is free to be an ordinary component prop. They
+// never reach the rendered root element.
+const isBuildAttr = (name) => name.startsWith('hb-');
 
-    // Explicit file= attribute: try each dir in order, first match wins
+async function resolveComponentTemplatePath({ componentsDirs, componentNames, attrs, tagName }) {
+    const file = typeof attrs['hb-file'] === 'string' ? attrs['hb-file'] : null;
+    const name = typeof attrs['hb-name'] === 'string' ? attrs['hb-name'] : null;
+
+    // Explicit hb-file= attribute: try each dir in order, first match wins
     if (file) {
         for (const dir of componentsDirs) {
             const candidate = path.resolve(dir, file);
@@ -302,10 +313,14 @@ async function resolveComponentTemplatePath({ componentsDirs, componentNames, at
         return path.resolve(componentsDirs[componentsDirs.length - 1], file);
     }
 
-    // <component name="foo" />: try each dir in order
+    // <component hb-name="foo" />: try each dir in order
     if (tagName === 'component') {
         if (!name) {
-            throw new Error('Component tag missing `name` or `file`: <component ...>');
+            const renamed = attrs.name !== undefined || attrs.file !== undefined;
+            throw new Error(
+                'Component tag missing `hb-name` or `hb-file`: <component ...>' +
+                    (renamed ? ' (`name=` and `file=` were renamed `hb-name=` and `hb-file=` in 0.18)' : '')
+            );
         }
         const filename = `${name}.html`;
         for (const dir of componentsDirs) {
@@ -341,7 +356,44 @@ async function resolveComponentTemplatePath({ componentsDirs, componentNames, at
     return path.resolve(componentsDirs[componentsDirs.length - 1], kebabFile);
 }
 
-async function expandComponents(html, { componentsDirs, componentNames, maxPasses = 50 }) {
+/**
+ * <code-file src="dns/dns.php" /> is replaced by that file's contents, HTML-
+ * escaped, read from siteConfig.codeRoot. It's for showing real, tested code
+ * on a page from one copy of it. Escaped text only, no wrapper: put it inside
+ * whatever pre or code markup the site uses. Optional lines="3-8" shows just
+ * those lines (1-based, inclusive). The trailing newline is dropped, and `[`
+ * is written as &#91; so code containing [[x]] can't be read as a placeholder.
+ * A missing codeRoot or file is a build error.
+ */
+async function renderCodeFile(attrs, codeRoot) {
+    const src = typeof attrs.src === 'string' ? attrs.src : '';
+    if (!src) throw new Error('<code-file> needs src="path/to/file", relative to siteConfig.codeRoot');
+    if (!codeRoot) throw new Error(`<code-file src="${src}">: set codeRoot in site.config.js to the folder it reads from`);
+
+    const file = path.resolve(codeRoot, src);
+    if (path.relative(codeRoot, file).startsWith('..')) {
+        throw new Error(`<code-file src="${src}"> points outside codeRoot (${codeRoot})`);
+    }
+    let text;
+    try {
+        text = await fs.readFile(file, 'utf-8');
+    } catch {
+        throw new Error(`<code-file src="${src}">: no such file in codeRoot (${file})`);
+    }
+    text = text.replace(/\r?\n$/, '');
+
+    if (typeof attrs.lines === 'string') {
+        const m = attrs.lines.match(/^(\d+)(?:-(\d+))?$/);
+        if (!m) throw new Error(`<code-file src="${src}" lines="${attrs.lines}">: lines must look like "3" or "3-8"`);
+        const from = Number(m[1]);
+        const to = m[2] ? Number(m[2]) : from;
+        text = text.split(/\r?\n/).slice(from - 1, to).join('\n');
+    }
+
+    return htmlEscape(text).replaceAll('[', '&#91;');
+}
+
+async function expandComponents(html, { componentsDirs, componentNames, codeRoot = null, maxPasses = 50 }) {
     let src = html;
 
     for (let pass = 0; pass < maxPasses; pass++) {
@@ -385,6 +437,20 @@ async function expandComponents(html, { componentsDirs, componentNames, maxPasse
             const selfClosing = openTag.endsWith('/>');
             const attrText = openTag.slice(tagMatch[0].length).replace(/\/?>$/, '');
             const attrs = parseAttributes(attrText);
+
+            if (tagLower === 'code-file') {
+                let end = tagEnd + 1;
+                if (!selfClosing) {
+                    const close = findMatchingCloseForTag(src, tagName, tagEnd + 1);
+                    if (!close) throw new Error(`Unclosed <${tagName}> tag near: ${openTag}`);
+                    end = close.end;
+                }
+                const code = await renderCodeFile(attrs, codeRoot);
+                src = src.slice(0, lt) + code + src.slice(end);
+                changed = true;
+                idx = lt + code.length;
+                continue;
+            }
 
             const componentPath = await resolveComponentTemplatePath({
                 componentsDirs,
@@ -483,6 +549,13 @@ async function expandTemplateSrc(html, pageDir) {
     return src;
 }
 
+/** Absolute codeRoot from siteConfig (relative to root), or null when unset. */
+export function resolveCodeRoot(siteConfig = {}, root = process.cwd()) {
+    const codeRoot = siteConfig?.codeRoot;
+    if (!codeRoot) return null;
+    return path.resolve(root || process.cwd(), String(codeRoot));
+}
+
 function extractLayoutDeclaration(pageSrc) {
     const layoutTagRe = /^\s*<layout\s+([^>]*?)\/>\s*/i;
     const match = pageSrc.match(layoutTagRe);
@@ -553,10 +626,12 @@ async function discoverComponentNames(componentsDirs) {
  * @param {string} [opts.title]
  * @param {string|null} [opts.jsSrc]
  * @param {string|null} [opts.cssHref]
- * @param {object} [opts.siteConfig]
+ * @param {object} [opts.siteConfig] - siteConfig.codeRoot (relative to root) is where <code-file> reads.
+ * @param {string} [opts.root] - Project root, for resolving codeRoot. Defaults to process.cwd().
  */
-export async function renderPage({ layoutsDir, pagePath, title, jsSrc, cssHref, componentsDir, siteConfig = {} }) {
+export async function renderPage({ layoutsDir, pagePath, title, jsSrc, cssHref, componentsDir, siteConfig = {}, root }) {
     const componentsDirs = toComponentsDirArray(componentsDir);
+    const codeRoot = resolveCodeRoot(siteConfig, root);
 
     const pageSrcRaw = await fs.readFile(pagePath, 'utf-8');
     const { layoutName, title: layoutTitle, pageContent: afterLayoutTag } = extractLayoutDeclaration(pageSrcRaw);
@@ -568,9 +643,9 @@ export async function renderPage({ layoutsDir, pagePath, title, jsSrc, cssHref, 
 
     const componentNames = await discoverComponentNames(componentsDirs);
 
-    let pageSrc = await expandComponents(pageSrcStripped, { componentsDirs, componentNames });
+    let pageSrc = await expandComponents(pageSrcStripped, { componentsDirs, componentNames, codeRoot });
     pageSrc = await expandTemplateSrc(pageSrc, path.dirname(pagePath));
-    const layoutSrc = await expandComponents(layoutSrcRaw, { componentsDirs, componentNames });
+    const layoutSrc = await expandComponents(layoutSrcRaw, { componentsDirs, componentNames, codeRoot });
 
     // [[title]] resolves to "PageTitle | " (with separator) or "" (empty);
     // the layout provides its own suffix in the <title> tag, e.g.
