@@ -10,6 +10,8 @@
   the same for inline code. Colors are CSS variables (Shiki's css-variables
   theme), so each site sets its own palette. Output is spans only. No client
   JavaScript. Without `highlight`, nothing changes.
+- `<code-file>` with no `lang` guesses the language from the file name; `lang="text"`
+  turns highlighting off for one file. `langForFile()` is exported.
 
 ## 0.18.0
 

@@ -439,6 +439,23 @@ async function highlightCode(code, lang) {
         .join('\n');
 }
 
+// The language for a file with no lang= given, from its name. Unknown names get
+// no highlighting rather than a guess.
+const LANG_BY_EXTENSION = {
+    php: 'php', sql: 'sql', js: 'javascript', mjs: 'javascript', ts: 'typescript', json: 'json',
+    html: 'html', htm: 'html', css: 'css', yml: 'yaml', yaml: 'yaml', sh: 'shellscript',
+    bash: 'shellscript', ini: 'ini', env: 'dotenv', md: 'markdown', xml: 'xml', csv: 'csv',
+    toml: 'toml',
+};
+export function langForFile(file) {
+    const base = path.basename(file).toLowerCase();
+    if (base === 'dockerfile' || base.startsWith('dockerfile.')) return 'docker';
+    if (base === '.env' || base.startsWith('.env.')) return 'dotenv';
+    if (base === 'nginx.conf' || (base.endsWith('.conf') && base.includes('nginx'))) return 'nginx';
+    const ext = base.includes('.') ? base.split('.').pop() : '';
+    return LANG_BY_EXTENSION[ext] ?? null;
+}
+
 async function renderCodeFile(attrs, codeRoot, highlight = false) {
     const src = typeof attrs.src === 'string' ? attrs.src : '';
     if (!src) throw new Error('<code-file> needs src="path/to/file", relative to siteConfig.codeRoot');
@@ -464,7 +481,11 @@ async function renderCodeFile(attrs, codeRoot, highlight = false) {
         text = text.split(/\r?\n/).slice(from - 1, to).join('\n');
     }
 
-    if (highlight && typeof attrs.lang === 'string' && attrs.lang) return highlightCode(text, attrs.lang);
+    if (highlight) {
+        // lang="" or no lang: guessed from the file name; lang="text" turns it off.
+        const lang = typeof attrs.lang === 'string' && attrs.lang ? attrs.lang : langForFile(src);
+        if (lang && lang !== 'text') return highlightCode(text, lang);
+    }
     return escapeCode(text);
 }
 

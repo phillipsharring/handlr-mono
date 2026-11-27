@@ -1105,3 +1105,26 @@ test('an unknown highlight language fails the build clearly', async () => {
         await cleanup(fx.root);
     }
 });
+
+test('<code-file> with no lang guesses it from the file name, and lang="text" turns it off', async () => {
+    const fx = await codeFixture('<pre><code-file src="dns/dns.php" lines="1" /></pre>|<pre><code-file src="dns/dns.php" lang="text" lines="1" /></pre>');
+    try {
+        const html = await buildOne(fx, { siteConfig: { codeRoot: 'examples', highlight: true } });
+        assert.match(html, /<pre><span style="color:var\(--shiki-token-keyword\)">&lt;\?<\/span>php<\/pre>\|/);
+        assert.ok(html.includes('|<pre>&lt;?php</pre>'), html);
+    } finally {
+        await cleanup(fx.root);
+    }
+});
+
+test('langForFile knows the usual names', async () => {
+    const { langForFile } = await import('../src/html-compiler.mjs');
+    assert.equal(langForFile('a/b.php'), 'php');
+    assert.equal(langForFile('compose.yml'), 'yaml');
+    assert.equal(langForFile('nginx.conf'), 'nginx');
+    assert.equal(langForFile('Dockerfile'), 'docker');
+    assert.equal(langForFile('.env'), 'dotenv');
+    assert.equal(langForFile('.env.example'), 'dotenv');
+    assert.equal(langForFile('init.sql'), 'sql');
+    assert.equal(langForFile('words.txt'), null);
+});

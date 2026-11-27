@@ -151,7 +151,9 @@ export default {
 };
 ```
 
-- `<code-file src="dns/dns.php" lang="php" />` comes out highlighted.
+- `<code-file src="dns/dns.php" lang="php" />` comes out highlighted. Leave
+  `lang` off and it's guessed from the file name (`.php`, `.sql`, `.yml`,
+  `nginx.conf`, `Dockerfile`, `.env`, ...); `lang="text"` turns it off.
 - `<code-highlight lang="shellscript">echo &quot;hi&quot;</code-highlight>`
   highlights inline code (written escaped, as usual in HTML), for a component
   that wraps its slot in it.
