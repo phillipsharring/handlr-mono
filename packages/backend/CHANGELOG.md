@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.19.0
+
+Lockstep bump. No functional changes to `phillipsharring/handlr-backend` this release.
+
 ## 0.18.0
 
 Lockstep bump. No functional changes to `phillipsharring/handlr-backend` this release.

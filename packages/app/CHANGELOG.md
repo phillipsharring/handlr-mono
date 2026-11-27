@@ -4,6 +4,10 @@
 target). It co-versions in lockstep with the framework; this file records changes to the
 **skeleton itself**. Full commit-level detail is in git history.
 
+## 0.19.0
+
+Lockstep bump. No functional changes to the app skeleton this release.
+
 ## 0.18.0
 
 ### Changed
